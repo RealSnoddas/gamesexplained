@@ -387,3 +387,7 @@ port 2 through the emulator's own control.
   (`work/scripts/aimbug.py`): at soldier x `$E8`, player x `$64`, level,
   the soldier faced right and his bullets moved at +2; at x `$C8`, left
   and -2.
+- REMEMBER's unlimited-grenades patch (`$2A8F` and `$3909` = 0): four
+  throws (`$3903` ran four times) and a box left the count at 5; the same
+  run without the patch went 5 to 1, and the box added 3
+  (`work/scripts/live.py grenades`).

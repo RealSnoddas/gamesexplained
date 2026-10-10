@@ -1,22 +1,37 @@
 # Commando — TODO
 
-Current tier is **Bronze** because this session's model ID is unknown/unproven; the run cannot claim Silver until a maintainer checks it (`kit/CHECKING.md`). The saved ledger is 52.8% of tracked bytes (code 32.1%, data 73.9%). The main gameplay engine and several data ranges still need explanation, so this is not a complete image explanation.
+The game is at **Silver**: 100.0 % coverage (62,913 of 62,913 tracked bytes),
+`facts.md` with the listing's measured error rate, every feature traced or
+confirmed, and the How it works page with a player for all three tunes and
+the sound effects. Coverage and verify ran on a proven model, so no
+maintainer's check is needed. The first steps of the contributor's run were
+on a model that was not recorded, and this run redid them.
 
-## Orientation and sweep still needed
+## For Gold
 
-- Capture the loader-to-engine hand-over at the first instruction of game code, compare it with `work/play.vsf`, and update the disk-file-to-memory map.
-- Finish and record the I/O register census and screen-code/text string sweep in `facts.md`.
-- Continue `coverage.py`'s work queue, starting with `$3A2E`, `$0A57`, `$0D59`, `$3DB5`, and `$0850`; trace the main loop, input, scrolling, player/enemy state, collision, scoring, grenades, all areas, sound, and ending. Keep feature statuses aligned with live tests.
-- Determine whether `$D800-$DFFF` (RAM under color RAM and CIA I/O) contains data the game uses; the listing reports this range unaccounted.
-- Rebuild and check the disassembler project from committed `symbols.json` on a clean startup before finalizing.
-- C64-Wiki reference screenshots were not saved because browser permission was declined. The local title and gameplay captures are included.
+- A human pass through `index.html`, section by section, and `steward` set
+  in `game.json` when it starts.
 
-## Host and kit
+## For Platinum
 
-- Ubuntu 26.04.1 x86_64 is a first C64 kit run on this operating system. `check-emulator` passed 57/57 on VICE 3.13.2; footprint verification passed and the install notes and status cell record the result.
-- Refresh `kit-feedback.md` to include the coverage ledger and symbol export changes, then run the required kit checks before committing.
+- Reassemble the listing byte for byte to `work/entry.vsf`'s memory and
+  boot it.
+
+## Open questions
+
+- REMEMBER's bug fix. CSDb credits the crack with one, and which bytes it
+  changed needs a copy of the 1985 release to compare. The same comparison
+  would say what the eight bytes of no-operations at `$0861` replaced.
+- The crack's depacker, instructions and menu were not traced; the listing
+  starts at the game's hand-over (`$0850`).
+- REMEMBER's no-falling poke (`$3C10-$3C5E`) is a candidate in `cheats.md`:
+  no live test walked Super Joe into water with it on.
 
 ## Page ideas
 
-- Show how the IRQ dispatch pointer in screen RAM `$0406-$0407` lets successive raster handlers update sprite registers for different parts of the screen.
-- Show the live grenade test: Space changes the HUD count and produces a projectile.
+- A Play tab. The ports behind the page (the music, the aim test, the score
+  line) are a start.
+- A stepper for the box double payout that walks the enemy loop slot by
+  slot.
+- The unused fourth spawn list (`$1D42`), with its doors and mortar man,
+  drawn on area 1's map.

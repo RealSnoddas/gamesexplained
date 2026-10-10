@@ -7,9 +7,9 @@
   "publisher": "Elite Systems",
   "developer": "Chris Butler, Rory Green, Chris Harvey",
   "title_image": "reference/commando-title.png",
-  "build": "REMEMBER Commando 100% +5 crack/high-score-saver release in the contributor-supplied D64; retail provenance unverified.",
-  "tier": "bronze",
-  "coverage_percent": null,
+  "build": "REMEMBER's crack \"Commando +5HD\" (CSDb release 40672, June 1997): a D64 headed \"once upon a time\", ID \"-rem-\", with the packed game and a saved high-score file. The 1985 release was not available to compare.",
+  "tier": "silver",
+  "coverage_percent": 100.0,
   "copy": "agent-draft",
   "steward": "",
   "credits": [
@@ -31,18 +31,44 @@
     }
   ],
   "tools": {
-    "emulator": "VICE release v3.13.2, v3.13.2-linux-x86_64-gui.zip; PAL C64SC",
+    "emulator": "release v3.13.2, v3.13.2-linux-x86_64-gui.zip (VICE x64sc, PAL)",
     "disassembler": "regenerator2000 0.9.20",
-    "python": "3.14.4",
-    "host": "Ubuntu 26.04.1 LTS, Linux x86_64"
+    "host": "Linux x86_64, Ubuntu 24.04.5 cloud container, four cores, no display",
+    "python": "3.13.16",
+    "node": "22.22.0",
+    "browser": "Chromium 1194 via Playwright 1.56.1 (preinstalled in the container)"
   },
-  "model": "unknown",
+  "model": "claude-opus-5-5[1m]",
   "step_models": {
+    "10-orient": [
+      "unknown",
+      "claude-opus-5-5[1m]"
+    ],
+    "20-features": [
+      "unknown",
+      "claude-opus-5-5[1m]"
+    ],
+    "30-text": [
+      "claude-opus-5-5[1m]"
+    ],
+    "40-sweep": [
+      "unknown",
+      "claude-opus-5-5[1m]"
+    ],
     "50-coverage": [
-      "unknown"
+      "claude-opus-5-5[1m]"
+    ],
+    "60-verify": [
+      "claude-opus-5-5[1m]"
+    ],
+    "70-minisite": [
+      "claude-opus-5-5[1m]"
+    ],
+    "80-retro": [
+      "claude-opus-5-5[1m]"
     ]
   },
-  "kit_version": "0.0.93",
+  "kit_version": "0.0.145",
   "created": "2026-10-06",
   "video": {
     "screen": "$E000",
