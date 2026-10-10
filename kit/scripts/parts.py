@@ -179,10 +179,19 @@ def elsewhere(P, p):
     return out
 
 
+def replaces(P, p):
+    """[[first, last, whose]]: the stretches of p's ranges that a part beneath it also wrote in
+    its own load, and owns in its own snapshot. That part's code refers to them as its own."""
+    own = ranges(p) if under(P, p) else []
+    return [[max(lo, a), min(hi, b), q["title"]] for q in under(P, p) for lo, hi in ranges(q)
+            for a, b in own if max(lo, a) <= min(hi, b)]
+
+
 def load_game(gdir):
     """A game folder's game.json. For a part's folder: the game's, with the part's own ledger
-    settings in place of the game's, "part" ({id, title, over}) and "elsewhere", the addresses
-    another part owns (symbols_export.regions leaves them out of this part's ledger)."""
+    settings in place of the game's, "part" ({id, title, over}), "elsewhere", the addresses
+    another part owns (symbols_export.regions leaves them out of this part's ledger), and
+    "replaces", those of its own that a part beneath wrote first (parts.replaces)."""
     top, pid = home(gdir)
     game = json.load(open(os.path.join(top, "game.json")))
     if pid is None:
@@ -194,6 +203,7 @@ def load_game(gdir):
     out.update({k: own.get(k, EMPTY[k]) for k in LEDGER_KEYS})
     out["part"] = {"id": pid, "title": me["title"], "over": [q["id"] for q in under(P, me)]}
     out["elsewhere"] = elsewhere(P, me)
+    out["replaces"] = replaces(P, me)
     return out
 
 
@@ -220,10 +230,26 @@ def clip(blocks, syms, comments, away):
             [c for c in comments if owned(c["address"], away)], left)
 
 
+def strays(syms, away, over, refs):
+    """The addresses of the automatic symbols at addresses this part's load wrote over a part
+    beneath (over: replaces()) that only code this part does not own refers to. A session on
+    this part's snapshot traces the code beneath too, and mints a symbol wherever it refers
+    to its own bytes there, which this part has replaced (#213): a name this part's own code
+    may never use. refs is {address: [the addresses that refer to it]}. A symbol nothing is
+    known to refer to stays, and so does every label a user gave, and every address the part
+    beneath never wrote: code beneath that refers there means what this part holds (a level's
+    entry, its tables)."""
+    return {s["address"] for s in syms if s.get("kind") == "auto" and owned(s["address"], away)
+            and not owned(s["address"], over) and refs.get(s["address"])
+            and not any(owned(r, away) for r in refs[s["address"]])}
+
+
 def seed(gdir):
-    """(game, symbol map) to start a disassembler on a part's snapshot: its own symbols.json
-    and, where it lies over other parts, theirs for the addresses it does not own, so that the
-    code it calls and the variables it shares are named."""
+    """(game, symbol map) to start a disassembler on a part's snapshot: its own symbols.json,
+    cut to the addresses it owns as symbols_export.py cuts an export, and, where it lies over
+    other parts, theirs for the addresses it does not own, so that the code it calls and the
+    variables it shares are named. A map written before the part had its "over" and "ranges"
+    holds the other parts' addresses too (#257): what is left out there is said."""
     game = load_game(gdir)
     f = os.path.join(gdir, "symbols.json")     # none for a part that has only been named
     sym = json.load(open(f)) if os.path.isfile(f) else {"blocks": [], "symbols": [], "comments": []}
@@ -232,8 +258,11 @@ def seed(gdir):
         return game, sym
     P = parts(top)
     me = next(p for p in P if p["id"] == pid)
+    b, s, c, left = clip(sym["blocks"], sym["symbols"], sym["comments"], game["elsewhere"])
+    if left or b != sorted(sym["blocks"], key=lambda x: x["start"]):
+        say_left(P, me, left)
     taken = [[lo, hi, ""] for lo, hi in ranges(me)]      # every address an entry has come from already
-    sym = dict(sym, blocks=list(sym["blocks"]), symbols=list(sym["symbols"]), comments=list(sym["comments"]))
+    sym = dict(sym, blocks=b, symbols=s, comments=c)
     for q in under(P, me):
         f = os.path.join(q["dir"], "symbols.json")
         if not os.path.isfile(f):
@@ -243,6 +272,32 @@ def seed(gdir):
         sym["blocks"] += b; sym["symbols"] += s; sym["comments"] += c
         taken += [[x["start"], x["end"], ""] for x in b]
     return game, sym
+
+
+def say_left(P, me, left):
+    """Say that seed() left out what part me's own symbols.json holds at addresses another part
+    owns, and name the labels and comments among it that no other part's symbols.json has: the
+    session never holds them, so the next export of me drops them from its file."""
+    have = set()
+    for q in P:
+        f = os.path.join(q["dir"], "symbols.json")
+        if q["id"] != me["id"] and os.path.isfile(f):
+            S = json.load(open(f))
+            have |= {(x["address"], x["name"]) for x in S["symbols"]}
+            have |= {(x["address"], x["type"], x["text"]) for x in S["comments"]}
+    lost = [x for x in left if ((x["address"], x["name"]) if "name" in x else
+                                (x["address"], x["type"], x["text"])) not in have]
+    print(f"left out what parts/{me['id']}/symbols.json holds at addresses another part owns, as "
+          f"symbols_export.py does: the blocks there and {len(left)} label(s) and comment(s)")
+    if lost:
+        print(f"{len(lost)} of those label(s) and comment(s) are in no other part's symbols.json:")
+        for x in lost[:8]:
+            print(f"  ${x['address']:04X}  {x.get('name') or x['text'][:60]}")
+        if len(lost) > 8:
+            print(f"  and {len(lost) - 8} more")
+        print("The session does not hold them, so the next export of this part drops them from its "
+              "symbols.json. To keep them, add them to the symbols.json of the part that owns their "
+              "addresses first.")
 
 
 def names_under(gdir, game=None):
@@ -338,6 +393,12 @@ def add(gdir, pid, title=None, over=None, adopt=False):
     # with the work on it, so a game can name forty parts it has not opened without forty stubs.
     with open(os.path.join(d, "part.json"), "w") as f:
         json.dump(part, f, indent=2)
+    if "listing.json" in own and adopt:   # the same bytes, a listing that names its part now (#210)
+        import subprocess
+        r = subprocess.run([sys.executable, os.path.join(HERE, "listing.py"), d, "--rebuild", "--write"],
+                           capture_output=True, text=True)
+        if r.returncode:
+            print(f"next: {r.stderr.strip() or r.stdout.strip()}")
     print(f"added {os.path.relpath(d)}" + (f", over {over}" if over else "")
           + (": the game's own symbol map, listing, facts and ledger settings are this part's now" if adopt else ""))
     if stale:

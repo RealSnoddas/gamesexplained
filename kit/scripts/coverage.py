@@ -12,14 +12,13 @@ state is excluded: stack, screen RAM, I/O, and anything else listed under
 a range under "include" is given back from them (the RAM under I/O, in a
 game that runs code there).
 
-NUMERATOR: a code byte is explained when the symbol whose span owns it carries a
+NUMERATOR: a byte is explained when the symbol whose span owns it carries a
 non-blank line comment. A description belongs to a routine, not to every
 branch target inside it, so only real boundaries (subroutines, data
 symbols, commented symbols) start a span. An identical description pasted
-onto several symbols counts once, at its first address. Authored data declared
-in game.json's `coverage.extra` counts as explained by that range's description;
-generic platform extras such as "character set" remain unexplained. A data
-declaration never explains executable code in the same range.
+onto several symbols counts once, at its first address: thirty-two copies
+of "character set" explain nothing about glyphs 32 to 63. Say which glyphs
+a block holds and what they draw, and each description is its own.
 
 REGIONS come from game.json: "video" (screen and character-set bases, which
 give the platform's standard exclude/extra blocks) and "coverage" (extra
@@ -29,7 +28,8 @@ A GAME OF SEVERAL PARTS (kit/scripts/parts.py) has a ledger per part, read
 from the part's folder, and each part counts only the addresses it owns, so
 the game's figure, the sum, counts every byte once. Given the game's own
 folder, this prints each part's figure and the total; the work queue is a
-part's (give the part's folder).
+part's (give the part's folder). With --live it leaves out the automatic
+symbols that symbols_export.py leaves out of a part, so the two agree.
 
 Usage:
   coverage.py <game dir>                 from symbols.json
@@ -46,7 +46,7 @@ import json, os, sys
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def load(gdir, live, session=None):
-    from symbols_export import read_live, regions, platform_of
+    from symbols_export import drop_strays, read_live, regions, platform_of
     from parts import load_game
     if not live and not os.path.isfile(os.path.join(gdir, "symbols.json")):     # a part that is only named
         sys.exit(f"{gdir} has no symbols.json: nothing is analysed there (symbols_export.py writes one)")
@@ -54,6 +54,8 @@ def load(gdir, live, session=None):
     reg = regions(game)
     if live:
         blocks, syms, comments = read_live(platform_of(game), session or gdir)
+        if reg.get("elsewhere"):
+            syms, _ = drop_strays(platform_of(game), session or gdir, syms, game)
     else:
         s = json.load(open(os.path.join(gdir, "symbols.json")))
         blocks, syms, comments = s["blocks"], s["symbols"], s["comments"]

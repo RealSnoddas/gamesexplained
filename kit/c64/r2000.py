@@ -24,26 +24,28 @@ reproduce your mistakes. A batch is logged as a whole, so check its result.
 """
 import json, os, sys, urllib.request
 
+from kernal import entry_points
+from ports import resolve_ports
+
+
 def _port(gdir=None):
-    """KIT_R2000_PORT; else the port the disassembler was started on for this game or part
-    (its work/r2000-port); else the one the launcher last started on; else 3000 (kit/c64/tools.py)."""
-    if os.environ.get("KIT_R2000_PORT"):
-        return int(os.environ["KIT_R2000_PORT"])
-    here = os.path.dirname(os.path.abspath(__file__))
-    for f in ([os.path.join(gdir, "work", "r2000-port")] if gdir else []) + [os.path.join(here, "..", "..", "tools", "r2000-port")]:
+    """An explicit environment override, the part's own session, or the clone's port."""
+    if gdir and "KIT_R2000_PORT" not in os.environ:
         try:
-            return int(open(f).read())
-        except (OSError, ValueError):
-            # one part of a game (kit/scripts/parts.py) never falls back to the clone's last
-            # disassembler: that is another part's session, and it would be read as this one's
-            if gdir and f.startswith(os.path.join(gdir, "")) and os.path.isfile(os.path.join(gdir, "part.json")):
+            with open(os.path.join(gdir, "work", "r2000-port")) as f:
+                raw = f.read().strip()
+        except FileNotFoundError:
+            if os.path.isfile(os.path.join(gdir, "part.json")):
                 sys.exit(f"no disassembler is running on a snapshot of {gdir} (`tools.py r2000 <its snapshot>` starts one).\n"
                          "To read this part's share of another part's session, name that part's folder:\n"
                          "  symbols_export.py <this part> --from <that part>      coverage.py <this part> --live --from <that part>")
-    return 3000
+        else:
+            return resolve_ports(environ=dict(os.environ, KIT_R2000_PORT=raw))["r2000"]
+    return resolve_ports()["r2000"]
 
 
 URL = f"http://127.0.0.1:{_port()}/mcp"
+
 MUTATING = {"r2000_set_label_name", "r2000_set_comment", "r2000_set_data_type",
             "r2000_disassemble", "r2000_batch_execute", "r2000_toggle_splitter",
             "r2000_add_scope", "r2000_set_immediate_format", "r2000_apply_enum_usage",
@@ -103,16 +105,33 @@ def failed(out):
 
 def read_live(gdir=None):
     """(blocks, symbols, comments) from the running server, in symbols.json's
-    vocabulary. symbols_export.py calls this for a c64 game, with the game's or the part's folder."""
+    vocabulary, with the KERNAL's entry points named the same whatever file the session
+    started on (kernal.py). symbols_export.py calls this for a c64 game, with the game's or
+    the part's folder."""
     rpc = make_client(gdir)
     blocks = json.loads(call(rpc, "r2000_get_blocks", {}))
     syms = json.loads(call(rpc, "r2000_get_symbols", {}))
     comments = json.loads(call(rpc, "r2000_get_comments", {}))
     return ([{"start": b["start_address"], "end": b["end_address"], "type": b["type"]} for b in blocks],
-            [{"address": s["address"], "name": s["name"], "type": s["type"],
-              "kind": s.get("kind", "user").lower()} for s in syms],
+            entry_points([{"address": s["address"], "name": s["name"], "type": s["type"],
+                           "kind": s.get("kind", "user").lower()} for s in syms]),
             [{"address": c["address"], "type": c["type"], "text": c["comment"]}
              for c in comments if c["comment"].strip()])
+
+
+def cross_references(addresses, gdir=None):
+    """{address: [the addresses that refer to it]} from the running server, asked 200 at a
+    time. symbols_export.py asks about the automatic symbols of a part's session (#213); an
+    address the server gave no answer for is left out."""
+    rpc, out, addresses = make_client(gdir), {}, list(addresses)
+    for i in range(0, len(addresses), 200):
+        ask = addresses[i:i + 200]
+        got = json.loads(call(rpc, "r2000_batch_execute", {"calls": [
+            {"name": "r2000_get_cross_references", "arguments": {"address": a}} for a in ask]}))
+        for a, r in zip(ask, got):
+            if r.get("status") == "success":
+                out[a] = json.loads(r["result"]["content"][0]["text"])
+    return out
 
 
 def game_dir(explicit=None):

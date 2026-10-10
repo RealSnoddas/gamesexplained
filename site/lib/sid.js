@@ -11,13 +11,23 @@
 //   sid         a Uint8Array(25): $D400-$D418 as the driver last wrote them
 //   playing()   true while a tune runs, false once it has ended or been stopped
 //   voice(x)    optional: plain data about voice x (0-2) for the display's rows
-//   readback(env3, osc3)  optional: called before each play() with what $D41C and $D41B read,
-//               voice 3's envelope level and the top eight bits of its waveform, as the model has
-//               them at the frame's start (the chip's values move within the frame; these do not)
+//   readback(env3, osc3, bus)  optional: called before each play() with what $D41C and $D41B
+//               read, voice 3's envelope level and the top eight bits of its waveform, and what a
+//               register the chip does not answer reads (bus, below), as the model has them at
+//               the frame's start (the chip's values move within the frame; these do not)
 //   writes      optional: every register write of the last frame in order, as a flat list
 //               [register, value, register, value, ...]. When a driver keeps it, the player
 //               applies the writes in order instead of the frame's final registers, so a gate
 //               turned off and on again within one frame restarts the envelope, as on the chip
+// A driver that reads a register it writes ($D400-$D418) does not get back what it wrote there:
+// the chip answers only $D419-$D41C, and a read of any other register returns the data bus, the
+// last value written to any register (or read from $D41B or $D41C), until it fades (createBus,
+// below). Before the driver's first write of a frame that is readback's bus; after it, the
+// driver's own last write. The player leaves the frame's last write on the bus when the driver
+// keeps writes, and otherwise the last register to change, in register order. Test such a
+// driver's port against its original with the bus, never with a copy of each register:
+// kit/c64/machine.js reads the SID through createBus, and a test on kit/c64/cpu6502.js alone
+// passes it as io (createBus's comment).
 // data is anything that survives structured cloning, usually the driver's tables as the game
 // loads them. Test the port against the game's own code run in a 6502 simulator, every register
 // after every frame, before it goes on a page: kit/c64/cpu6502.js hands the driver's writes to the
@@ -27,8 +37,11 @@
 // the test bit, sync and ring modulation; envelopes on reSID's rate table, with the exponential
 // decay and the ADSR delay bug; the C64's output stage (16 kHz low pass, 16 Hz high pass).
 // The filter is off unless a page asks for it (opts.filter '6581' or '8580'; 'none', the default,
-// ignores $D415-$D417 and the routing bits of $D418). When on, it is reSID 0.16's idealised
-// two-integrator state-variable filter (filter.cc, filter.h), checked against its source: cutoff
+// sends every voice straight out and ignores the cutoff, resonance and filter modes, but voice 3
+// off, $D418 bit 7, still cuts voice 3 when $D417 does not route it to the filter, as on the
+// chip: a game that reads voice 3 as a random source keeps it silent that way). When on, it is
+// reSID 0.16's idealised two-integrator state-variable filter (filter.cc, filter.h), checked
+// against its source: cutoff
 // from $D415/$D416 through the chip's measured curve (F0_6581 or F0_8580, below), Q = 0.707 +
 // resonance / 15, low-, band- and high-pass summed unweighted as $D418 selects, and voice 3 off
 // ($D418 bit 7) where voice 3 is not filtered. Two departures: the integrators step in seconds of
@@ -39,12 +52,14 @@
 // waveforms (approximated by AND), samples played through the volume register (registers change
 // once a frame), the time between writes inside a frame (a frame's writes land at one instant, so
 // a gate opened and closed inside one frame is silent here, where the chip runs the attack for the
-// cycles between), and NTSC timing (the clock is PAL's: 985,248 Hz, frames of 312 lines of 63 cycles).
+// cycles between). The clock is PAL's (985,248 Hz, frames of 312 lines of 63 cycles) unless a page
+// passes ntsc: true to mount or host (1,022,727 Hz, frames of 263 lines of 65 cycles).
 //
 //   C64Sid.mount(root, options)  the player: tune buttons, a seek bar, a piano roll and a panel
 //                                per voice
 //   C64Sid.host(options)         the sound alone, for a page with its own controls
-//   C64Sid.engine()              the model and the frame player without a page, for tests
+//   C64Sid.engine()              the model, the bus and the frame player without a page, for
+//                                tests
 globalThis.C64Sid = (function () {
   'use strict';
 
@@ -54,6 +69,11 @@ globalThis.C64Sid = (function () {
     'use strict';
     const CLOCK = 985248;               // PAL clock, Hz
     const FRAME_CYCLES = 312 * 63;      // one PAL frame: 312 lines of 63 cycles (50.12 Hz)
+    // an NTSC machine (opts.ntsc): its clock, 1,022,727 Hz, and its frames of 263 lines of 65
+    // cycles (59.83 Hz), for a game that runs its driver once an NTSC frame
+    const NTSC_CLOCK = 1022727, NTSC_FRAME_CYCLES = 263 * 65;
+    const clockOf = (opts) => opts && opts.ntsc ? NTSC_CLOCK : CLOCK;
+    const frameOf = (opts) => opts && opts.ntsc ? NTSC_FRAME_CYCLES : FRAME_CYCLES;
 
     // ------------------------------------------------------------------ the SID
     // Rate periods from reSID (VICE src/resid/envelope.cc): the envelope steps every
@@ -95,13 +115,57 @@ globalThis.C64Sid = (function () {
     }
     const F0 = { '6581': splineTable(F0_6581), '8580': splineTable(F0_8580) };
 
+    // ------------------------------------------------------------------ the data bus
+    // A read of a register the SID does not answer ($D400-$D418, $D41D-$D41F and their mirrors)
+    // returns the data bus: the last value written to any register, or read from $D41B or $D41C,
+    // which put theirs on it. It holds for 0x1D00 cycles on the 6581 and 0xA2000 (about 34
+    // frames) on the 8580, then reads 0, and each read of a register the chip does not answer
+    // halves the time left. That is VICE's reSIDfp (libresidfp's SID.cpp, read() and write(), and
+    // ageBusValue() in SID.h), checked to the cycle against the kit's VICE build (v3.13.2) by
+    // kit/c64/test_sid_bus.js, on readings kit/c64/sid_bus.py recorded there
+    // (kit/c64/fixtures/sid-bus.json). The emulator's rule, not a chip's: a real SID's bits fade
+    // one by one, at rates that differ from chip to chip. $D419 and $D41A, the paddles, are
+    // VICE's own: $FF with none plugged in, and the bus untouched. createSID's bus fades as its
+    // filter's chip's, the 8580's with the filter off (the chip the kit's VICE starts with).
+    // createBus(chip) keeps the bus on the caller's clock t, in cycles:
+    //   write(value, t)  read(register, t, own)  peek(t)  chip(model)  save()  load(state)
+    // own is what $D41B or $D41C holds at t (read ignores it for the other registers). A test
+    // on kit/c64/cpu6502.js passes it as the SID's part of io:
+    //   const bus = C64Sid.engine().createBus('8580');
+    //   io = { read: (a, cpu) => bus.read(a & 31, cpu.cycles, 0), write: (a, v, cpu) => bus.write(v, cpu.cycles) }
+    const HOLD = { '6581': 0x1D00, '8580': 0xA2000 };
+    function createBus(chip) {
+      let value = 0, ttl = 0, at = 0, hold = HOLD[chip] || HOLD['8580'];
+      function age(t) {
+        const n = t - at;
+        at = t;
+        if (ttl !== 0) { ttl -= n; if (ttl <= 0) { value = 0; ttl = 0; } }
+      }
+      return {
+        write(v, t) { age(t); value = v & 0xFF; ttl = hold; },
+        read(r, t, own) {
+          r &= 31;
+          if (r === 0x19 || r === 0x1A) return 0xFF;
+          age(t);
+          if (r === 0x1B || r === 0x1C) { value = own & 0xFF; ttl = hold; return value; }
+          ttl = Math.trunc(ttl / 2);
+          return value;
+        },
+        peek(t) { age(t); return value; },
+        chip(c) { hold = HOLD[c] || HOLD['8580']; },
+        save() { return [value, ttl, at]; },               // the state, for a machine's save
+        load(s) { [value, ttl, at] = s; },
+      };
+    }
+
     function noiseBits(r) {                                  // LFSR bits 20,18,14,11,9,5,2,0 -> output bits 11-4
       return (r >> 9 & 0x800) | (r >> 8 & 0x400) | (r >> 5 & 0x200) | (r >> 3 & 0x100) |
         (r >> 2 & 0x080) | (r << 1 & 0x040) | (r << 3 & 0x020) | (r << 4 & 0x010);
     }
 
     function createSID(sampleRate, opts) {
-      const cps = CLOCK / sampleRate;                        // cycles per output sample
+      const CK = clockOf(opts);
+      const cps = CK / sampleRate;                           // cycles per output sample
       const sub = Math.max(1, Math.ceil(cps / 6));           // oscillator steps per sample, 6 cycles at most
       const dt = cps / sub;
       const regs = new Uint8Array(25), mute = [false, false, false];
@@ -112,24 +176,28 @@ globalThis.C64Sid = (function () {
       const kLP = 1 - Math.exp(-2 * Math.PI * 15900 / sampleRate);  // the C64's output stage:
       const kHP = 1 - Math.exp(-2 * Math.PI * 15.9 / sampleRate);   // 16 kHz low pass, 16 Hz high pass
       const gain = opts && opts.gain != null ? opts.gain : 0.6;   // the output level
-      let vol = 0, frac = 0, lp = 0, dc = 0;
+      let vol = 0, frac = 0, lp = 0, dc = 0, now = 0;        // now: cycles run, the bus's clock
+      const bus = createBus('8580');
       // the filter: chip 'none', '6581' or '8580'; state in the units of one voice's output
       const F = { chip: 'none', w: 0, n: 1, q1: 1 / 0.707, hp: 0, bp: 0, lp: 0 };
 
       function filterSet() {                                 // cutoff and Q from the registers
         const fc = (regs[21] & 7) | regs[22] << 3;
-        const w = 2 * Math.PI * (F0[F.chip] ? F0[F.chip][fc] : 0) * dt / CLOCK;   // per oscillator step
+        const w = 2 * Math.PI * (F0[F.chip] ? F0[F.chip][fc] : 0) * dt / CK;   // per oscillator step
         F.n = Math.max(1, Math.ceil(w / 0.2));               // small steps keep the integrators stable
         F.w = w / F.n;
         F.q1 = 1 / (0.707 + (regs[23] >> 4) / 15);
       }
       function setFilter(chip) {
         F.chip = chip === '6581' || chip === '8580' ? chip : 'none';
+        bus.chip(F.chip === 'none' ? '8580' : F.chip);     // the bus fades as the filter's chip's
         F.hp = F.bp = F.lp = 0;
         filterSet();
       }
 
       function write(r, val) {
+        bus.write(val, now);
+        if (r > 24) return;                                  // $D419-$D41F: nothing to set
         regs[r] = val;
         if (r === 24) { vol = val & 15; return; }            // routing and mode: read in sample()
         if (r > 20) { filterSet(); return; }
@@ -209,6 +277,7 @@ globalThis.C64Sid = (function () {
       function sample() {
         const c0 = frac + cps, c = Math.floor(c0);
         frac = c0 - c;
+        now += c;
         for (let i = 0; i < 3; i++) clockEnv(V[i], c);
         let sum = 0;
         for (let k = 0; k < sub; k++) {
@@ -226,8 +295,9 @@ globalThis.C64Sid = (function () {
             }
           }
           for (let i = 0; i < 3; i++) if ((V[i].ctrl & 2) && V[SRC[i]].msbUp) V[i].acc = 0;  // sync
-          if (F.chip === 'none') {
-            for (let i = 0; i < 3; i++) if (!mute[i]) sum += (wave(V[i], V[SRC[i]]) - 0x800) * V[i].env;
+          if (F.chip === 'none') {                         // voice 3 off still cuts an unrouted voice 3
+            const off3 = (regs[24] & 0x80) && !(regs[23] & 4);
+            for (let i = 0; i < 3; i++) if (!mute[i] && !(i === 2 && off3)) sum += (wave(V[i], V[SRC[i]]) - 0x800) * V[i].env;
             continue;
           }
           const route = regs[23], mode = regs[24];
@@ -255,6 +325,7 @@ globalThis.C64Sid = (function () {
       }
 
       function skip(c) {                                     // c cycles with no output: envelopes and phases
+        now += c;
         for (let i = 0; i < 3; i++) {
           const o = V[i];
           clockEnv(o, c);
@@ -266,7 +337,10 @@ globalThis.C64Sid = (function () {
 
       setFilter(opts && opts.filter);
       const read3 = () => [V[2].env, wave(V[2], V[SRC[2]]) >> 4];   // $D41C, $D41B
-      return { V, mute, write, setRegs, sample, skip, setFilter, read3, filter: () => F.chip };
+      // a read of register r ($D400 + r) as the processor makes it, the bus's included
+      const read = r => bus.read(r, now, (r & 31) === 0x1C ? V[2].env : wave(V[2], V[SRC[2]]) >> 4);
+      const peek = () => bus.peek(now);                      // the bus, with no read's effect on it
+      return { V, mute, write, setRegs, sample, skip, setFilter, read3, read, peek, filter: () => F.chip };
     }
 
     // ------------------------------------------------------------------ driver + SID + frames
@@ -276,15 +350,15 @@ globalThis.C64Sid = (function () {
     // runs from the tune's start through the model without sound, since a driver's state is
     // everything it has played so far and nothing short of playing it recreates it.
     function createPlayer(drv, sampleRate, opts) {
-      const sid = createSID(sampleRate, opts), cps = CLOCK / sampleRate;
+      const sid = createSID(sampleRate, opts), cps = clockOf(opts) / sampleRate, FRAME = frameOf(opts);
       let toFrame = 0, frames = 0, on = false, run = 0;
       function command(c) {
         if (c.cmd === 'start') {
           drv.init(c.tune); frames = 0; on = true; run = c.run || 0;
           if (c.at > 0) {
             frame();                                         // init's writes, and the first frame
-            while (frames < c.at && drv.playing()) { sid.skip(FRAME_CYCLES); frame(); }
-            toFrame = FRAME_CYCLES;                          // the last frame is heard
+            while (frames < c.at && drv.playing()) { sid.skip(FRAME); frame(); }
+            toFrame = FRAME;                                 // the last frame is heard
           }
         }
         else if (c.cmd === 'stop') drv.stop();
@@ -301,7 +375,7 @@ globalThis.C64Sid = (function () {
         return { t, run, frame: frames, vol: s[24] & 15, playing: drv.playing(), v };
       }
       function frame() {                                     // the game calls its driver
-        if (drv.readback) drv.readback(...sid.read3());
+        if (drv.readback) drv.readback(...sid.read3(), sid.peek());
         drv.play();
         const w = drv.writes;                                // in order, where the driver keeps them
         if (w) for (let k = 0; k + 1 < w.length; k += 2) sid.write(w[k], w[k + 1]);
@@ -312,7 +386,7 @@ globalThis.C64Sid = (function () {
       function render(out, n, t0, post) {
         for (let i = 0; i < n; i++) {
           if (toFrame <= 0) {                                // a new frame
-            toFrame += FRAME_CYCLES;
+            toFrame += FRAME;
             if (on) {
               frame();
               if (post) post(snapshot(t0 + i / sampleRate));
@@ -325,7 +399,7 @@ globalThis.C64Sid = (function () {
       return { drv, sid, command, render };
     }
 
-    return { CLOCK, FRAME_CYCLES, createSID, createPlayer };
+    return { CLOCK, FRAME_CYCLES, NTSC_CLOCK, NTSC_FRAME_CYCLES, createBus, createSID, createPlayer };
   }
 
   // ------------------------------------------------------------------ the sound, on a page
@@ -347,7 +421,7 @@ class C64SidProcessor extends AudioWorkletProcessor {
 }
 registerProcessor('c64-sid', C64SidProcessor);`;
 
-  // host({driver, data, gain, filter, onFrame}): an AudioContext playing the driver through the model.
+  // host({driver, data, gain, filter, ntsc, onFrame}): an AudioContext playing the driver through the model.
   // Call it from a click or a key press, where browsers allow sound to start. It resolves to
   // {ctx, mode, send(command)}. onFrame(snapshot), if given, receives every driver frame when it
   // is computed, ahead of the sound; show it once snapshot.t has reached ctx.currentTime.
@@ -356,7 +430,7 @@ registerProcessor('c64-sid', C64SidProcessor);`;
     if (!AC) throw new Error('This browser has no Web Audio.');
     const ctx = new AC();
     ctx.resume();
-    const opts = { gain: o.gain, filter: o.filter }, post = o.onFrame || null;
+    const opts = { gain: o.gain, filter: o.filter, ntsc: !!o.ntsc }, post = o.onFrame || null;
     const code = 'const E = (' + engine.toString() + ')();\nconst createDriver = (' + o.driver.toString() + ');\n' + WORKLET;
     const urls = ['data:text/javascript;charset=utf-8,' + encodeURIComponent(code),
       () => URL.createObjectURL(new Blob([code], { type: 'text/javascript' }))];
@@ -427,7 +501,8 @@ registerProcessor('c64-sid', C64SidProcessor);`;
   const noteName = (n) => NAMES[n % 12] + Math.floor(n / 12);  // note 0 = C0, 57 = A4
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 
-  // mount(root, {driver, data, tunes, rows, mark, gain, filter, colors}) builds the player inside root.
+  // mount(root, {driver, data, tunes, rows, mark, gain, filter, ntsc, colors}) builds the player inside root.
+  //   ntsc    optional: true for a game whose driver runs once an NTSC frame, heard at the NTSC clock
   //   tunes   the names of the driver's tunes, in its order: one button each
   //   rows    optional: the lines of each voice's panel above its frequency, each
   //           {k: 'Label', f} or, for an indented line with no label, {in: true, mono, f}.
@@ -454,7 +529,8 @@ registerProcessor('c64-sid', C64SidProcessor);`;
     }
     const FILTERS = [['none', 'Off'], ['6581', '6581'], ['8580', '8580']];
     let filter = o.filter && FILTERS.some(([c]) => c === o.filter) ? o.filter : 'none';
-    const E = engine(), HZ = E.CLOCK / 16777216, FPS = E.CLOCK / E.FRAME_CYCLES;
+    const E = engine(), CK = o.ntsc ? E.NTSC_CLOCK : E.CLOCK;
+    const HZ = CK / 16777216, FPS = CK / (o.ntsc ? E.NTSC_FRAME_CYCLES : E.FRAME_CYCLES);
     const C0 = 440 * Math.pow(2, -57 / 12);
     const COLORS = o.colors || VOICE_COLORS, ROWS = o.rows || [];
     const mark = o.mark || ((v, p) => !!(v.ctrl & 1) && !(p && p.ctrl & 1));
@@ -533,7 +609,7 @@ registerProcessor('c64-sid', C64SidProcessor);`;
     }
 
     async function audio() {                                 // created on the first click only
-      const h = await host({ driver: o.driver, data: o.data, gain: o.gain, filter, onFrame: take });
+      const h = await host({ driver: o.driver, data: o.data, gain: o.gain, filter, ntsc: o.ntsc, onFrame: take });
       ctx = h.ctx; send = h.send;
       root.dataset.sidAudio = h.mode;
       muted.forEach((on, voice) => send({ cmd: 'mute', voice, on }));

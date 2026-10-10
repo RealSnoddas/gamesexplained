@@ -56,6 +56,29 @@ Usage:
                          the listing was built (its blocks, its symbols'
                          addresses and types, which addresses carry a comment,
                          the ledger), or when git no longer has that symbols.json
+  listing.py <game dir> --rebuild [--write]
+                         build the listing again from the image its own records
+                         describe, and say whether it matches the file; needs no
+                         snapshot. For maintainers: a mismatch means the kit has
+                         moved under a listing that was never rebuilt, and CI
+                         fails it (check_listing.py). With --write, the rebuild
+                         replaces the file, as the snapshot would have built it;
+                         refused when symbols.json has changed since. A byte the
+                         ledger counts that the listing does not hold, which only
+                         the snapshot has, becomes a gap with a note (LOST) until a
+                         build from the snapshot fills it
+
+What CI checks (check_listing.py): every code record re-decodes, from the image the
+listing's own bytes describe, to the same length, mnemonic, bytes and operand, and
+the whole listing builds again from those bytes to the same file. That is the
+permanent guard against a decoder, a ledger or a record format that drifts under a
+listing, and against an off-by-one record.
+
+Beside the records, listing.json names what it was built from: `symbols_sha256`, and
+`snapshot`, the snapshot's file (from the game folder, or its name alone when it lies
+outside) and its SHA-256. A game's snapshots differ in the data it changes as it runs,
+so building over a listing from another snapshot says so and names the old one (#214).
+--relabel and --recomment keep the field; --rebuild has no snapshot of its own.
 
 Record fields (short, the file is large):
   a  address            t  kind: code | byte | word | addr | lohi | text | gap | note
@@ -65,8 +88,9 @@ Record fields (short, the file is large):
   s  side comment       x  addresses that reference this one
   d  decoded text (text records) / value list (word, addr)
   ta the targets of a split table, on its first row, as addresses
+  note on a gap: bytes the game uses that the listing does not hold (LOST)
 """
-import hashlib, importlib.util, json, os, sys
+import contextlib, hashlib, importlib.util, io, json, os, sys
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from ledger import compute
@@ -210,7 +234,7 @@ def uncounted(game, reg, L, ram, entry=None, top=12):
         return any(lo <= a <= hi for lo, hi in rs)
 
     away = [(lo, hi) for lo, hi, _ in game.get("elsewhere") or []]   # another part's, in a game of several
-    said = ranges(cov.get("include", []) + cov.get("exclude", []) + cov.get("extra", [])) + away
+    said = ranges(cov.get("include", []) + cov.get("exclude", [])) + away
     found = []                                  # (start, end, bytes of data, what)
     hidden = []
     for row in plat.get("hidden", []):          # RAM a default exclusion covers: reported by the page
@@ -440,6 +464,88 @@ def recomment(gdir):
     print(f"wrote {lpath}: {changed} records with new comments or names")
 
 
+# The note on a gap of bytes the ledger counts and the listing does not hold: it was built
+# before the kit counted them, and its snapshot is gone (#210). The Source tab shows it.
+LOST = "the game uses, missing from this listing"
+
+
+def held_by_records(gdir):
+    """1 at each address gdir's listing.json holds a byte for, else 0."""
+    have = bytearray(0x10000)
+    for r in json.load(open(os.path.join(gdir, "listing.json")))["records"]:
+        have[r["a"]:r["a"] + len(r.get("b") or [])] = b"\x01" * len(r.get("b") or [])
+    return have
+
+
+def image_from_records(gdir):
+    """The memory image gdir's listing.json describes, rebuilt from the bytes its own
+    records carry. State 0 (a gap) is read for its state, never its bytes, so only the
+    addresses the listing lists need a byte; every other address stays $00."""
+    ram = bytearray(0x10000)
+    for r in json.load(open(os.path.join(gdir, "listing.json")))["records"]:
+        b = r.get("b")
+        if b:
+            ram[r["a"]:r["a"] + len(b)] = bytes(b)
+    return ram
+
+
+def decode_problems(gdir):
+    """Every code record in gdir's listing, decoded again from the memory image the
+    listing's own bytes describe, with the platform's current decoder. Returns the
+    records that no longer agree as (address, what changed): the permanent guard
+    against a decoder that drifts under a listing, and against an off-by-one record.
+    Needs no snapshot, and none of the ledger or the symbols walk."""
+    from parts import load_game
+    game = load_game(gdir)
+    cpu = platform_modules(game.get("platform"))[0]
+    recs = json.load(open(os.path.join(gdir, "listing.json")))["records"]
+    ram = image_from_records(gdir)
+    names = all_names(gdir, game, json.load(open(os.path.join(gdir, "symbols.json"))))
+    regs, chips = register_names(game.get("platform")), io_meaning(game)
+    bad = []
+    for r in recs:
+        if r["t"] != "code":
+            continue
+        d = cpu.decode(ram, r["a"])
+        if not d:
+            bad.append((r["a"], "no longer decodes to an instruction")); continue
+        m, mode, n = d
+        if n != len(r["b"]) or m != r["m"] or list(ram[r["a"]:r["a"] + n]) != r["b"]:
+            bad.append((r["a"], f"decodes as {m} ({n} bytes), the listing has {r['m']} ({len(r['b'])} bytes)"))
+            continue
+        o, ta = cpu.operand(r["a"], m, mode, r["b"], names, regs, chips)
+        if (o, ta) != (r.get("o"), r.get("oa")):
+            bad.append((r["a"], f"operand now reads {o!r}, the listing has {r.get('o')!r}"))
+    return bad
+
+
+def compare(was, now):
+    """A listing rebuilt from its own bytes (`now`) against the committed one (`was`):
+    0 when they match, else 1, naming the first place they differ. The build is
+    deterministic, so a difference means the decoder, the ledger or symbols.json has
+    moved under a listing that was not rebuilt."""
+    if was == now:
+        print(f"OK - the listing rebuilds from its own bytes ({len(now['records'])} records)")
+        return 0
+    if was.get("symbols_sha256") != now.get("symbols_sha256"):
+        print("FAILED - symbols.json has changed since the listing was built"); return 1
+    a, b = was.get("records", []), now.get("records", [])
+    for i in range(min(len(a), len(b))):
+        if a[i] != b[i]:
+            keys = [k for k in sorted(set(a[i]) | set(b[i])) if a[i].get(k) != b[i].get(k)]
+            print(f"FAILED - record {i} at ${a[i]['a']:04X} differs in {', '.join(keys)}")
+            for k in keys:
+                print(f"  {k}: listing {json.dumps(a[i].get(k))[:160]}  rebuilt {json.dumps(b[i].get(k))[:160]}")
+            return 1
+    if len(a) != len(b):
+        print(f"FAILED - the listing has {len(a)} records, the rebuild {len(b)}"); return 1
+    for k in sorted(set(was) | set(now)):
+        if was.get(k) != now.get(k):
+            print(f"FAILED - {k} differs: {json.dumps(was.get(k))[:120]} vs {json.dumps(now.get(k))[:120]}")
+            return 1
+    print("FAILED - the rebuild differs from the listing"); return 1
+
+
 def main():
     argv = sys.argv[1:]
     if len(argv) == 2 and argv[1] == "--relabel":
@@ -453,6 +559,7 @@ def main():
                  "listing.py <game dir> <snapshot>, or rename and recomment the one there is "
                  "with --relabel or --recomment (-h says more)")
     gdir, vsf = argv[0], argv[1]
+    rebuild = vsf == "--rebuild"      # check_listing.py: the image comes from the listing's own bytes
     from parts import load_game, parts
     if parts(gdir):
         sys.exit(f"{gdir} is a game of several parts: list one, {os.path.join(gdir, 'parts', '<id>')}, "
@@ -462,17 +569,21 @@ def main():
     cpu, snap = platform_modules(platform)
     spath = os.path.join(gdir, "symbols.json")
     sym = json.load(open(spath))
-    ram = snap.read(vsf)
-    from symbols_export import PLATFORM_DEFAULTS
-    ext = PLATFORM_DEFAULTS.get(platform, {}).get("snapshot_ext")
-    if not ext:
-        sys.exit(f"{platform!r} has no snapshot_ext in symbols_export.PLATFORM_DEFAULTS; see kit/PLATFORMS.md")
-    epath = argv[argv.index("--entry") + 1] if "--entry" in argv else os.path.join(gdir, "work", f"entry.{ext}")
     entry = None
-    if os.path.exists(epath) and os.path.abspath(epath) != os.path.abspath(vsf):
-        entry = snap.read(epath)
-    elif "--entry" in argv:
-        sys.exit(f"no hand-over snapshot at {epath}")
+    have = bytearray(b"\x01" * 0x10000)   # a snapshot gives every byte; a rebuild only the listing's
+    if rebuild:
+        ram, have = image_from_records(gdir), held_by_records(gdir)
+    else:
+        ram = snap.read(vsf)
+        from symbols_export import PLATFORM_DEFAULTS
+        ext = PLATFORM_DEFAULTS.get(platform, {}).get("snapshot_ext")
+        if not ext:
+            sys.exit(f"{platform!r} has no snapshot_ext in symbols_export.PLATFORM_DEFAULTS; see kit/PLATFORMS.md")
+        epath = argv[argv.index("--entry") + 1] if "--entry" in argv else os.path.join(gdir, "work", f"entry.{ext}")
+        if os.path.exists(epath) and os.path.abspath(epath) != os.path.abspath(vsf):
+            entry = snap.read(epath)
+        elif not os.path.exists(epath) and "--entry" in argv:
+            sys.exit(f"no hand-over snapshot at {epath}")
 
     from symbols_export import regions
     reg = regions(game)
@@ -508,6 +619,12 @@ def main():
                 a += 1
             records.append({"a": g, "t": "gap", "n": a - g})
             continue
+        if not have[a]:
+            g = a
+            while a < 0x10000 and state[a] and not have[a]:
+                a += 1
+            records.append({"a": g, "t": "gap", "n": a - g, "note": LOST})
+            continue
         rec = {"a": a}
         if a in names: rec["l"] = names[a]
         if a in line: rec["c"] = line[a]
@@ -515,6 +632,9 @@ def main():
         t = TYPES[btype[a]]
         if code[a]:
             d = cpu.decode(ram, a)
+            if d and not all(have[a:a + d[2]]):
+                sys.exit(f"${a:04X}: the listing holds only part of the instruction there: "
+                         "rebuild it from the snapshot")
             if d:
                 m, mode, n = d
                 bs = list(ram[a:a + n])
@@ -532,7 +652,7 @@ def main():
         # data: an item never crosses a labelled address, a comment, a block edge or a state edge
         def run_end(limit):
             e = a + 1
-            while e < 0x10000 and e < a + limit and state[e] and btype[e] == btype[a] \
+            while e < 0x10000 and e < a + limit and state[e] and have[e] and btype[e] == btype[a] \
                     and e not in names and e not in line and e not in side:
                 e += 1
             return e
@@ -542,7 +662,7 @@ def main():
         def pair_end(limit):
             blk = next(b for b in sym["blocks"] if b["start"] <= a <= b["end"])
             e = a + 1
-            while e < 0x10000 and e < a + limit and state[e] and btype[e] == btype[a] \
+            while e < 0x10000 and e < a + limit and state[e] and have[e] and btype[e] == btype[a] \
                     and ((e - blk["start"]) % 2 == 1 or (e not in names and e not in line and e not in side)):
                 e += 1
             return e
@@ -566,6 +686,9 @@ def main():
             if a == blk["start"]:
                 n = (blk["end"] - blk["start"] + 1) // 2
                 lo, hi = (blk["start"], blk["start"] + n) if t == "Lo/Hi Address" else (blk["start"] + n, blk["start"])
+                if not all(have[blk["start"]:blk["end"] + 1]):
+                    sys.exit(f"${a:04X}: the listing holds only part of the split table there: "
+                             "rebuild it from the snapshot")
                 targets = [ram[lo + i] | (ram[hi + i] << 8) for i in range(n)]
                 for i, ta in enumerate(targets):
                     xref(ta, lo + i)
@@ -594,7 +717,9 @@ def main():
         if ad in names: rec["l"] = names[ad]
         if ad in line: rec["c"] = line[ad]
         if ad in side: rec["s"] = side[ad]
-        if state[ad]:
+        if state[ad] and not have[ad]:
+            rec["note"] = "in bytes this listing does not hold"
+        elif state[ad]:
             host = max(r["a"] for r in records if r["t"] != "gap" and r["a"] < ad)
             rec["note"] = f"inside the item at ${host:04X}"
         else:
@@ -632,17 +757,64 @@ def main():
     out.update({
         "title": game.get("title"), "build": game.get("build"),
         "symbols_sha256": hashlib.sha256(open(spath, "rb").read()).hexdigest(),
-        "index": index, "records": records,
     })
     path = os.path.join(gdir, "listing.json")
+    try:
+        was = json.load(open(path)).get("snapshot")
+    except (OSError, ValueError):
+        was = None
+    if rebuild:   # the image is the listing's own bytes, so the snapshot is still the one it names
+        shot = was
+    else:
+        rel = os.path.relpath(os.path.abspath(vsf), os.path.abspath(gdir))
+        shot = {"file": os.path.basename(vsf) if rel.startswith("..") else rel.replace(os.sep, "/"),
+                "sha256": hashlib.sha256(open(vsf, "rb").read()).hexdigest()}
+    if shot:
+        out["snapshot"] = shot
+    out.update({"index": index, "records": records})
+    if rebuild and "--write" not in argv:
+        sys.exit(compare(json.load(open(path)), out))
+    if rebuild:
+        old = json.load(open(path))
+        if old == out:
+            print(f"OK - {path} already rebuilds from its own bytes"); return
+        if old.get("symbols_sha256") != out["symbols_sha256"]:
+            sys.exit(f"{path} was built from a different symbols.json: rebuild it from the snapshot")
+        said = io.StringIO()
+        with contextlib.redirect_stdout(said):
+            compare(old, out)
+        with open(path, "w") as f:
+            json.dump(out, f, separators=(",", ":"))
+        print(f"wrote {path}, rebuilt from its own bytes: {len(records)} records; it differed from the file "
+              f"first in {said.getvalue().splitlines()[0].replace('FAILED - ', '')}")
+        lost = [r for r in records if r.get("note") == LOST]
+        if lost:
+            print(f"  {sum(r['n'] for r in lost)} byte(s) the ledger counts are not in the listing, the first at "
+                  f"${lost[0]['a']:04X}: only the snapshot has them, so they show as missing until a build from it")
+        return
     with open(path, "w") as f:
         json.dump(out, f, separators=(",", ":"))
     kinds = {}
     for i in index: kinds[i["k"]] = kinds.get(i["k"], 0) + 1
     print(f"wrote {path}: {len(records)} records, {sum(1 for r in records if r['t']=='code')} instructions, "
           f"index {kinds}, {os.path.getsize(path)//1024} KB")
+    if was and was.get("sha256") != shot["sha256"]:
+        print(f"note: the listing was built from {was.get('file')} ({str(was.get('sha256'))[:12]}), and this one "
+              f"from {shot['file']} ({shot['sha256'][:12]}). Data the game changes as it runs may have moved: "
+              "read git diff before committing it.")
     for line in uncounted(game, reg, L, ram, entry) + beneath(gdir, game, ram):
         print(line)
+    # a short run of untyped bytes between two code records is usually a missed
+    # instruction (the opcode byte of a BIT skip, an undocumented NOP), and the
+    # page's interpreter reads its code from the listing: name them at build time (#229)
+    for i, r in enumerate(records):
+        if r["t"] == "gap" and not r.get("note") and r["n"] < 16:
+            prev = records[i - 1] if i else None
+            nxt = records[i + 1] if i + 1 < len(records) else None
+            if prev and nxt and prev["t"] == "code" and nxt["t"] == "code":
+                span = f"${r['a']:04X}" if r["n"] == 1 else f"${r['a']:04X}-${r['a'] + r['n'] - 1:04X}"
+                print(f"  {span}: {r['n']} byte(s) with no type between code: likely a missed "
+                      f"instruction; give it a type, or the page's interpreter reads a zero opcode there")
 
 
 if __name__ == "__main__":
