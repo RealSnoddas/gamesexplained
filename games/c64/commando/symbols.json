@@ -7563,12 +7563,12 @@
   {
    "address": 0,
    "type": "line",
-   "text": "The processor port's direction register, which the game leaves as the KERNAL set it. It has a symbol only because draw_row's LDA and STA ($3FBE, $3FC1) read $0000,Y as loaded; the redraw ($3F75) writes both operands before the first row is copied."
+   "text": "The processor port's direction register, which the game leaves as the KERNAL set it. It has a symbol only because draw_row's LDA and STA ($3FBE, $3FC1) name $0000,Y as loaded; the redraw ($3F75) writes both operands before the first row is copied."
   },
   {
    "address": 1,
    "type": "line",
-   "text": "The processor port. The game keeps BASIC, the KERNAL and I/O in, and changes it twice: it clears CHAREN while it copies the gunsight into the RAM under the I/O area ($0A5F-$0A74), and clears HIRAM while it reads the letter under the gunsight from the screen at $E000, beneath the KERNAL ROM ($0B7F-$0B90)."
+   "text": "The processor port. The game banks BASIC out at its start ($358F), so it reads $36 in play with the KERNAL and I/O in, and changes it twice more: it clears CHAREN while it copies the gunsight into the RAM under the I/O area ($0A5F-$0A74), and clears HIRAM while it reads the letter under the gunsight from the screen at $E000, beneath the KERNAL ROM ($0B7F-$0B90). REMEMBER's saver writes $37 back ($44FC)."
   },
   {
    "address": 2,
@@ -7608,7 +7608,7 @@
   {
    "address": 34,
    "type": "line",
-   "text": "Pointer to the area's spawn-list x column ($22/$23, from area_spawn_x at each area's start, $1449), read as ($22),Y by the spawn handlers."
+   "text": "Pointer to the area's spawn-list x column ($22/$23, from area_spawn_x at each life's start, $1449), read as ($22),Y by the spawn handlers. For a walker who comes in from the side it holds instead the time before he turns down ($23A8)."
   },
   {
    "address": 35,
@@ -7618,7 +7618,7 @@
   {
    "address": 36,
    "type": "line",
-   "text": "Pointer to the spawn list's trigger rows ($24/$25, from area_spawn_rows, $143D), read by the spawner ($109D, $1B8E)."
+   "text": "Pointer to the spawn list's trigger rows ($24/$25, from area_spawn_rows, $143D), read by the spawner ($1B8E), by the placement at each life's start ($109D, $10DC) and by three handlers that set a soldier's y from his trigger row ($22CC, $2311, $239D)."
   },
   {
    "address": 37,
@@ -7628,7 +7628,7 @@
   {
    "address": 38,
    "type": "line",
-   "text": "Pointer to the spawn list's x-high column ($26/$27, from area_spawn_xhigh, $1455), read as ($26),Y by the handlers that place a sprite across the screen's 256-pixel line, such as the door ($1E71)."
+   "text": "Pointer to the spawn list's x-high column ($26/$27, from area_spawn_xhigh, $1455), read as ($26),Y by the handlers that place a sprite across the screen's 256-pixel line, such as the door ($1E71). The walkers' handler reads the same column as the map row a walker enters on ($239A)."
   },
   {
    "address": 39,
@@ -7823,7 +7823,7 @@
   {
    "address": 1024,
    "type": "line",
-   "text": "The random generator's state, low byte ($3FE8: rotates the two bytes left, then makes this byte their EOR plus the high byte), seeded from the raster line ($3FFF). Before the game starts, the first byte of REMEMBER's screen, where its menu prints its banner ($4568)."
+   "text": "The random generator's state, low byte ($3FE8: rotates the two bytes left as one 16-bit value, then makes this byte their EOR plus the high byte plus the carry, the bit the rotation took from this byte's top), seeded from the raster line ($3FFF). Before the game starts, the first byte of REMEMBER's screen, where its menu prints its banner ($4568)."
   },
   {
    "address": 1025,
@@ -7838,22 +7838,22 @@
   {
    "address": 1027,
    "type": "line",
-   "text": "The map row at the top of the screen: $A5 when an area starts, counting down as the player advances ($08E0), 0 at the gate or the fortress. Also the title views' row ($0FCC)."
+   "text": "The map row at the top of the screen: $A5 when an area starts ($08BA), moved down at each life's start to the nearest restart row at or below it ($3E2E), then counting down as the player advances ($08E0), 0 at the gate or the fortress. Also the title views' row ($0FCC)."
   },
   {
    "address": 1028,
    "type": "line",
-   "text": "$FF on a frame when the map moves down a pixel, because the player pushes up while above y $A4 ($3ADF); otherwise 0 ($3AA6), and 0 when he is killed ($106B). Added to the fine scroll ($08CE), and taken off every slot's y so the soldiers on the ground move with it ($3D86)."
+   "text": "$FF on a frame when the map moves down a pixel, because the player pushes up while above y $A4 with the map not at its top ($3ADF); otherwise 0 ($3AA6), and put back to 0 when that step would take him into a wall ($3C7E), when he is killed ($106B) or falls ($3C5C), and in the name entry ($0C95). Added to the fine scroll ($08CE), and taken off the y of every slot in use except the player's, so the soldiers on the ground move with the map ($3D86)."
   },
   {
    "address": 1029,
    "type": "line",
-   "text": "The high byte of the area's map, $60, $80 or $A0 ($1430), added to every map address ($1784, $3FB6, $15D7)."
+   "text": "The high byte of the area's map, $60, $80 or $A0 ($1430), added to the map addresses that the map lookup ($1784) and the redraw ($3FB6) work out, and the gate's high byte ($15D7). Some bunker stamps use fixed addresses in area 1's map instead: the three bunkers each life puts back ($3E4E-$3E73) and one ruin ($3858)."
   },
   {
    "address": 1030,
    "type": "line",
-   "text": "The raster interrupt's next handler, low byte: each handler names the next ($40F7, $4157, $4190, $4253, $4358), and the entry ($4116) jumps through it."
+   "text": "The raster interrupt's next handler, low byte: the set-up names the first ($40F7), each handler names the next ($4157, $4190, $4253, $4358, $4456), and the entry ($4116) jumps through it."
   },
   {
    "address": 1031,
@@ -7863,7 +7863,7 @@
   {
    "address": 1034,
    "type": "line",
-   "text": "The game's frame counter, one a frame of play ($08F7); its bits pace the animations, the box's flashing and the rifle soldiers' aim."
+   "text": "The game's frame counter, counted on every pass of the game logic ($08F7): each frame, except, while the map scrolls, the one frame in eight on which it moves a character row ($08DC); its bits pace the animations, the box's flashing and the rifle soldiers' aim."
   },
   {
    "address": 1035,
@@ -8038,7 +8038,7 @@
   {
    "address": 1165,
    "type": "line",
-   "text": "The type of each of the sixteen slots, $048D-$049C: the movement loop moves a slot only while its byte is not zero ($3D5C). This byte, the player's, is set only in the name entry ($0BDC) and cleared with the rest ($3DD7)."
+   "text": "The type of each of the sixteen slots, $048D-$049C: the movement loop moves slots 1-15 only while their byte is not zero ($3D5C), and the player always. This byte, the player's, is set only in the name entry ($0BDC), cleared with the rest ($3DD7) and never read."
   },
   {
    "address": 1166,
@@ -8178,7 +8178,7 @@
   {
    "address": 1267,
    "type": "line",
-   "text": "The area counter: 0, 1, 3, then 4, 5, 7 for the second loop ($0941-$094D). Its low two bits choose the area's tables, character set and colours; area 2 is skipped. The messages set it to 2 while they show, for the text character set ($1270)."
+   "text": "The area counter: 0, 1, 3, then 4, 5, 7 for the second loop ($0941-$094D). Its low two bits choose the area's tables, character set and colours; area 2 is skipped. The fire mask alone is chosen by the low three bits ($3E80), so every area of the second loop gets $0F. The messages set it to 2 while they show, for the text character set ($1270)."
   },
   {
    "address": 1268,
@@ -8238,7 +8238,7 @@
   {
    "address": 1284,
    "type": "line",
-   "text": "The enemies' fire mask, ANDed with each shooter's timer: a shot only when the result is zero ($33B5). From the area's entry in fire_masks at each life's start ($3E89), and $3F while the gate soldiers come ($2CD1)."
+   "text": "The enemies' fire mask, ANDed with each shooter's timer: a shot only when the result is zero ($33B5). From fire_masks by the area counter's low three bits at each life's start ($3E89): $3F, $1F and $0F in areas 0, 1 and 3, $0F in every area of the second loop. $3F while the gate soldiers come ($2CD1)."
   },
   {
    "address": 1285,
@@ -8248,7 +8248,7 @@
   {
    "address": 1286,
    "type": "line",
-   "text": "The name being entered, eight letters ($0506-$050D), spaces at first ($0BE3)."
+   "text": "The name being entered, eight letters ($0506-$050D), zero bytes at first ($0BE3), which show as blanks; a rub-out puts the $75 mark back in its place ($0DE7)."
   },
   {
    "address": 1295,
@@ -8258,7 +8258,7 @@
   {
    "address": 1296,
    "type": "line",
-   "text": "The letter under the gunsight ($0B89), END ($78) to finish ($0D01)."
+   "text": "The glyph that was under the gunsight at the last press of fire ($0B89; $20 before the first, $0C00), END ($78) to finish ($0D01)."
   },
   {
    "address": 1297,
@@ -8273,17 +8273,17 @@
   {
    "address": 1536,
    "type": "line",
-   "text": "REMEMBER's screen from row 12, column 32: the instructions viewer copies the third quarter of each page here ($4763)."
+   "text": "REMEMBER's screen from row 12, column 32: the instructions viewer copies the third 256 bytes of each 1,000-byte page here ($4763)."
   },
   {
    "address": 1792,
    "type": "line",
-   "text": "REMEMBER's screen from row 19, column 8: the last quarter of each page ($476F)."
+   "text": "REMEMBER's screen from row 19, column 8: the last 232 bytes of each page ($476F)."
   },
   {
    "address": 2048,
    "type": "line",
-   "text": "Sixty-one zero bytes at the start of the loaded file ($0800-$083C). Nothing reads or writes them; the game's own code starts at $0850."
+   "text": "Sixty-one zero bytes ($0800-$083C) before REMEMBER's file name, as memory holds them once the packed file, which loads at $0801, has unpacked. Nothing in the unpacked program reads or writes them; the game's own code starts at $0850."
   },
   {
    "address": 2109,
@@ -8318,12 +8318,12 @@
   {
    "address": 2179,
    "type": "line",
-   "text": "Title, then a new game. Parks the map at row $A5 (the bottom of an area), resets the slots ($3DE0), builds the play screen ($4049) and starts the raster interrupts ($40E8), starts tune 0 and runs the title and attract loop ($0F48) until fire. Then turns the sound effects on ($5006, though nothing in the game turns them off), zeroes the score, area counter and fine scroll, turns sprite expansion off and gives five grenades ($04FF) and five lives ($0500). The manual promises six grenades; this build starts with five."
+   "text": "Title, then a new game. Parks the map at row $A5, sets up a life ($3DE0, which moves the map down to the area's first checkpoint), builds the play screen ($4049) and starts the raster interrupts ($40E8), starts tune 0 and runs the title and attract loop ($0F48) until fire. Then turns the sound effects on ($5006, though nothing in the game turns them off), zeroes the score, area counter and fine scroll, turns sprite expansion off and gives five grenades ($04FF) and five lives ($0500). The manual promises six grenades; this build starts with five."
   },
   {
    "address": 2232,
    "type": "line",
-   "text": "Start of an area: map row $A5, tune 0 again, then falls into life_start."
+   "text": "Start of an area: map row $A5, tune 0 again, then falls into life_start, whose set-up ($3DE0) moves the map down to the first checkpoint at or below that row. So play begins at row $AF in area 0 and $A6 in areas 1 and 3 (live)."
   },
   {
    "address": 2242,
@@ -8333,12 +8333,12 @@
   {
    "address": 2251,
    "type": "line",
-   "text": "The in-game frame loop. Waits for the raster interrupt's frame tick ($400C). While the screen is scrolling ($0404 non-zero) it steps the fine scroll ($0402) and, each time it wraps to 7, moves the map one character row ($0403 decremented), refreshes the sprites ($3D2A) and redraws the playfield ($3F75), with $04E9 marking which half of that work is done; that frame skips the game logic. Otherwise it counts a frame ($040A), moves and sorts the sprites ($3D2A, $3F06), runs the grenade ($38A5), the eleven enemy slots ($2495), the spawn list ($1B8B) and the player's shots ($3623). With the player dying ($0503) it goes to the death sequence at $0953; otherwise it reads the joystick ($3A8C) and, unless the gate is open and he is walking out ($04F7, set at $3A30 and cleared at each life's start), tests him against every enemy ($100F). The area is over when the player's sprite reaches y = $5A."
+   "text": "The in-game frame loop. Waits for the raster interrupt's frame tick ($400C). While the screen is scrolling ($0404 non-zero) it steps the fine scroll ($0402) and, each time it wraps to 7, moves the map one character row ($0403 decremented), moves the sprites ($3D2A) and redraws the playfield ($3F75), with $04E9 marking which half of that work is done; that frame skips the game logic. Otherwise it counts a frame ($040A), moves and sorts the sprites ($3D2A, $3F06), checks for a grenade throw ($38A5), runs the eleven enemy slots ($2495), the spawn list ($1B8B) and the player's shots and grenade ($3623). With the player dying ($0503) it goes to the death sequence at $0953; otherwise it reads the joystick ($3A8C) and, unless the gate is open and he is walking out ($04F7, set at $3A30 and cleared at each life's start), tests him against every enemy ($100F). The area is over when the player's sprite reaches y = $5A."
   },
   {
    "address": 2295,
    "type": "line",
-   "text": "The logic of a frame on which the map did not move: counts the frame ($040A), moves and sorts the sprites, runs the grenade, the enemies, the spawner and the shots, then the player's death or his controls and the touch test, and ends the area when he reaches y $5A."
+   "text": "The logic of a frame on which the map did not move a character row: counts the frame ($040A), moves and sorts the sprites, checks for a grenade throw, runs the enemies, the spawner and the shots, then the player's death or his controls and the touch test, and ends the area when he reaches y $5A."
   },
   {
    "address": 2339,
@@ -8428,12 +8428,12 @@
   {
    "address": 2687,
    "type": "line",
-   "text": "The name-entry gunsight, 63 bytes of a multicolour sprite: a ring with four ticks pointing in, drawn in colour 2 (red, set at $0BAE). Copied to $D040 by $0A57; the copy takes 64 bytes, so its last byte is the opcode at $0ABE."
+   "text": "The name-entry gunsight, 63 bytes of a multicolour sprite: a ring with four ticks pointing in and a small cross at its centre, drawn in colour 2 (red, set at $0BAE). Copied to $D040 by $0A57; the copy takes 64 bytes, so its last byte is the opcode at $0ABE."
   },
   {
    "address": 2750,
    "type": "line",
-   "text": "Name entry: flashes the letter just shot. For 50 frames after a hit ($0511 set, $0512 counting) the cell under the gunsight ($F7) cycles in steps of four frames between the letter, the letter + $20 and glyph $79; then the letter is put back and the flash ends."
+   "text": "Name entry: flashes the letter just shot. While $0511 is set, each frame counts $0512 up, and the cell under the gunsight ($F7) cycles in steps of four frames through the letter, glyph $79, the letter + $20 and $79 again; when the count reaches 50 the letter is put back and the flash ends. A new press of fire moves a running flash to the new cell without restarting it. Only a rub-out zeroes the count ($0DF2), so a flash after a rub-out lasts 50 frames, one after an earlier flash has ended 256, and the first after loading starts from the byte REMEMBER's screen left there."
   },
   {
    "address": 2810,
@@ -8463,7 +8463,7 @@
   {
    "address": 3208,
    "type": "line",
-   "text": "Name entry after a high score. Plays tune 1, clears the screen and the slots, sets the area to 2 (the text character set) and prints the letter grid from $0D09 at $E082 in white. Then runs the frame loop: joystick ($0C0A), shot ($0D59), flash ($0ABE), sprites ($3D2A, $3F06) and snap ($0C6F), until the gunsight's cell is glyph $78, END."
+   "text": "Name entry after a high score. Plays tune 1, clears the screen and the slots, sets the area to 2 (the text character set) and prints the letter grid from $0D09 at $E082 in white. Then runs the frame loop: joystick ($0C0A), shot ($0D59), flash ($0ABE), sprites ($3D2A, $3F06) and snap ($0C6F), until fire is pressed with the gunsight on glyph $78, END."
   },
   {
    "address": 3257,
@@ -8473,12 +8473,12 @@
   {
    "address": 3308,
    "type": "line",
-   "text": "The name entry's frame loop: wait for the frame, joystick, shot, flash, sprites, snap to the grid, until the letter under the gunsight ($0510) is END ($78)."
+   "text": "The name entry's frame loop: wait for the frame, joystick, shot, flash, sprites, snap to the grid, until the glyph read at the last press of fire ($0510) is END ($78)."
   },
   {
    "address": 3337,
    "type": "line",
-   "text": "Name entry screen, in the game's alphabet (A = $5B ... Z = $74, digits from $21): five spaces and eight $75 marks where the name goes, then three blank lines and the rows \"A B C D E F G H I J\", \"K L M N O P Q R S T\" and \"U V W X Y Z\" followed by $75, $76, $77 (rub out) and $78 (END). $FF moves down a row, $FE ends."
+   "text": "Name entry screen, in the game's alphabet (A = $5B ... Z = $74, digits from $21): five spaces, the eight $75 marks where the name goes and an END glyph ($78) after them, then two blank lines and the rows \"A B C D E F G H I J\", \"K L M N O P Q R S T\" and \"U V W X Y Z\" followed by $75, $76, $77 (rub out) and $78 (END), with a blank line between each. $FF moves down a row, $FE ends."
   },
   {
    "address": 3417,
@@ -8523,7 +8523,7 @@
   {
    "address": 3822,
    "type": "line",
-   "text": "High-score names, eight letters each, best first, plus a ninth slot ($0F2E) that a beaten eighth entry is pushed into. Loaded from REMEMBER's file before $0850 runs, so what is here is that file's table (CHRIS, RORY, THE DUDE, SARAH, NIGEL, KEITH, ADOLF, DILK on this disk), not the 1985 default."
+   "text": "High-score names, eight letters each, best first, plus a ninth slot ($0F2E) that a beaten eighth entry is pushed into. Loaded from REMEMBER's file before $0850 runs, so what is here is that file's table (CHRIS, RORY, THE DUDE, SARAH followed by a space and the heart glyph $76, NIGEL, KEITH, ADOLF, DILK on this disk), not the 1985 default."
   },
   {
    "address": 3830,
@@ -8553,12 +8553,12 @@
   {
    "address": 3912,
    "type": "line",
-   "text": "The title and attract loop, returning when fire is pressed. Clears the slots and the screen, sets the area counter to 2 (whose character set holds the letters) and lays out the COMMANDO logo from seven sprites doubled in both directions (slots 5-11 at y $48: x, x-high and block from $0FEC, $0FF3 and $0FFA, orange), prints the credits ($10FC) and waits about five seconds (255 frames) for fire alone on port 2. Then it shows eight views of the battlefield, about five seconds each: view X takes its area from $1001 and its map row from $1008, sets the area tables ($1427), colours the playfield ($4015) and draws the map ($3F75) under the logo. After the eighth it starts again with the credits."
+   "text": "The title and attract loop, returning when fire is pressed. Clears the slots and the screen, sets the area counter to 2 (whose character set holds the letters) and lays out the COMMANDO logo from seven sprites doubled in both directions (slots 5-11 at y $48: x, x-high and block from $0FEC, $0FF3 and $0FFA, orange), prints the credits ($10FC) and waits about five seconds (255 frames) for fire alone on port 2. Then it draws eight views of the battlefield: view X takes its area from $1001 and its map row from $1008, sets the area tables ($1427), colours the playfield ($4015) and draws the map ($3F75) under the logo. The first seven stay about five seconds each, with the same wait for fire; the eighth is wiped as soon as it is drawn, because the loop then starts again with the credits."
   },
   {
    "address": 3938,
    "type": "line",
-   "text": "Places the seven sprites of the COMMANDO logo, slots 5-11, from the tables at $0FEC, $0FF3 and $0FFA, at y $48, still, with behaviour $10 so the enemy loop leaves them alone."
+   "text": "Places the seven sprites of the COMMANDO logo, slots 5-11, from the tables at $0FEC, $0FF3 and $0FFA, at y $48, still, with behaviour $10, the one that does nothing ($2578). The enemy loop does not run during the title, and the game's start clears the slots ($3DE0)."
   },
   {
    "address": 4013,
@@ -8588,27 +8588,27 @@
   {
    "address": 4090,
    "type": "line",
-   "text": "The COMMANDO logo: sprite block of each of the seven letters, $F6-$FB and $AC."
+   "text": "The COMMANDO logo: sprite block of each of its seven sprites, $F6-$FB and $AC. The eight letters straddle the sprites' edges, and $AC holds the logo's right-hand end."
   },
   {
    "address": 4097,
    "type": "line",
-   "text": "Attract mode: the area each of the eight views shows (0, 0, 1, 1, 3, 3, 3). The loop runs eight views but this table has seven entries: the eighth reads $1008, the next table's first byte ($53), whose low two bits make it area 3."
+   "text": "Attract mode: the area of each view (0, 0, 1, 1, 3, 3, 3). The loop draws eight views but this table has seven entries: the eighth reads $1008, the next table's first byte ($53), whose low two bits make it area 3; that view is wiped as soon as it is drawn."
   },
   {
    "address": 4104,
    "type": "line",
-   "text": "Attract mode: the map row each view starts at ($53, $7C, $3A, $01, $A9, $6E, $36). The eighth view reads one byte further, the LDY opcode $A0 at $100F, so it shows area 3 from row 160."
+   "text": "Attract mode: the map row each view starts at ($53, $7C, $3A, $01, $A9, $6E, $36). The eighth view reads one byte further, the LDY opcode $A0 at $100F, so it draws area 3 from row 160, which the loop's restart wipes at once."
   },
   {
    "address": 4111,
    "type": "line",
-   "text": "Kills the player on contact. For each of the eleven enemy slots whose behaviour is marked in $1074 (soldiers, bullets, mortar shells and the like), compares positions: the same x-high half, x within 4 pixels and y within 8. A hit sets $0503 = 1, starts the death timer, plays effect 4, stops the player and stops the scroll. REMEMBER's \"switch off the collision\" trainer fills $1056-$106D with NOPs, which removes the kill."
+   "text": "Kills the player on contact. For each of the eleven enemy slots whose behaviour is marked in $1074 (soldiers on the move, enemy bullets, bombs and the bunker guns' shells, explosions, the leading half of a crossing vehicle, the lorry and the jeep; not guards, soldiers in cover, the motorcycle that stops, or grenades and mortar bombs in flight), compares positions: the same x-high half, the enemy's x from 3 pixels left of the player's to 4 right, and its y from 7 above to 8 below. A hit sets $0503 = 1, starts the death timer, plays effect 4, stops the player and stops the scroll. REMEMBER's \"switch off the collision\" trainer fills $1056-$106D with NOPs, which removes the kill."
   },
   {
    "address": 4182,
    "type": "line",
-   "text": "The touch test's kill, 24 bytes to $106D: dying = 1, the death count, effect 4, the player and the scroll stopped. The trainer's no-collision answer fills them with NOPs ($45FE)."
+   "text": "The touch test's kill, 24 bytes to $106D: dying = 1, the death count, effect 4, the player and the scroll stopped. The trainer's no-collision answer fills them with NOPs ($45FD)."
   },
   {
    "address": 4182,
@@ -8638,7 +8638,7 @@
   {
    "address": 4331,
    "type": "side",
-   "text": "for an enemy with no partner $04A1 holds its heading or a value left by an earlier occupant, so this store moves the y of whichever slot that number names"
+   "text": "for an enemy with no partner $04A1 holds its heading, a walker's walking time ($50 or $6E) or a value left by an earlier occupant, and this store writes the y to $0432 plus that number: another enemy's y for 0-10, a byte of a later table above that ($0482, enemy 0's y-speed, for $50)"
   },
   {
    "address": 4340,
@@ -8673,7 +8673,7 @@
   {
    "address": 4642,
    "type": "line",
-   "text": "The message between areas. Copies the ordinals for \"BROKE THE ... AREA\" and \"NOW RUSH THE ... AREA\" from $1306 (area & 3 picks \"1ST\"/\"2ND\", \"2ND\"/\"3RD\"), or after area 3 points the two lines at \"CONGRATULATIONS\" and \"MISSION COMPLETE\" instead, by rewriting the LDA operands at $1283 and $129A. Then clears the slots and the screen and types the lines out a letter every six frames at row 10 and row 12, in the text character set (area counter 2 while it runs), and holds them 120 frames."
+   "text": "The message between areas. Copies the ordinals for \"BROKE THE ... AREA\" and \"NOW RUSH THE ... AREA\" from $1306 (area & 3 picks \"1ST\"/\"2ND\", \"2ND\"/\"3RD\"), or after area 3 points the two lines at \"CONGRATULATIONS\" and \"MISSION COMPLETE\" instead, by rewriting the LDA operands at $1283 and $129A. Then clears the slots and the screen and types the lines out a letter every six frames at row 10 and row 12, in the text character set (area counter 2 while it runs), and holds them 121 frames ($1348 with Y = $78)."
   },
   {
    "address": 4738,
@@ -8808,7 +8808,7 @@
   {
    "address": 5159,
    "type": "line",
-   "text": "Points the zero-page pointers at the current area's tables (area counter & 3): the map's base page into $0405 (from $3EB0), the spawn list's x ($22), trigger rows ($24), x-high ($26) and handler numbers ($28), and the terrain classes by character ($2A). Also sets the character set, $D018 = area x 2, so area 0 uses $C000, 1 $C800, 2 $D000 and 3 $D800."
+   "text": "Points the zero-page pointers at the current area's tables (area counter & 3): the map's base page into $0405 (from $3EB0), the spawn list's x ($22), trigger rows ($24), x-high ($26) and handler numbers ($28), and the terrain classes by character ($2A). Also sets the character set, area x 2 in the low nibble of $D018, so area 0 uses $C000, 1 $C800, 2 $D000 and 3 $D800."
   },
   {
    "address": 5253,
@@ -8953,7 +8953,7 @@
   {
    "address": 5905,
    "type": "line",
-   "text": "Turns a sprite position into the address of the map character under it: the column is (x - 16) / 8 from $04F0, plus 32 when the x-high flag $04F2 is set (the 8-bit subtraction's borrow already gets x 256-271 right), and the row is (y - 30) / 8 from $04F1 plus the map row at the top of the screen ($0403). Leaves the address, the area's map base page $0405 added, in $FC/$FD; callers read the character there and look it up in the area's terrain table ($2A)."
+   "text": "Turns a sprite position into the address of the map character under it: the column is (x - 16) / 8 from $04F0, plus 32 when the x-high flag $04F2 is set (the 8-bit subtraction's borrow already gets x 256-271 right), and the row is (y - 30) / 8 from $04F1 plus the map row at the top of the screen ($0403). Leaves the address, the area's map base page $0405 added, in $FC/$FD. Most callers read the character there and look it up in the area's terrain table ($2A); $2E54 compares it with character $30, and $380C hands the address to stamp_map ($14B5) to put down a ruined bunker."
   },
   {
    "address": 6027,
@@ -9043,7 +9043,7 @@
   {
    "address": 7490,
    "type": "line",
-   "text": "A fourth spawn list that no pointer in $1485-$149C reaches, trigger rows: 25 entries from row $C6 up, ended by $FF, laid out exactly as the three in use, with x, x-high and handlers at $1D5C, $1D75 and $1D8E. Its first two rows, $C6 and $C4, are below the screen of an area that starts at row $A5, so $109B would skip them. With area 2's table entries copying area 3's, it reads like the list of an area that is no longer played."
+   "text": "A fourth spawn list that no pointer in $1485-$149C reaches, trigger rows: 25 entries from row $C6 up, ended by $FF, laid out exactly as the three in use, with x, x-high and handlers at $1D5C, $1D75 and $1D8E. Its first two rows, $C6 and $C4, lie near the map's bottom, below where any area in use starts. With area 2's table entries copying area 3's, it reads like the list of an area that is no longer played."
   },
   {
    "address": 7516,
@@ -9073,7 +9073,7 @@
   {
    "address": 7660,
    "type": "line",
-   "text": "Area 3's spawn list, x-high of each entry (a map row for handlers 8 and 9)."
+   "text": "Area 3's spawn list, x-high of each entry, $00 or $FF: this list has no handler 8 or 9, whose entries would hold a map row here."
   },
   {
    "address": 7694,
@@ -9138,12 +9138,12 @@
   {
    "address": 8001,
    "type": "line",
-   "text": "Spawn handler 22: a vehicle two sprites wide (blocks $B6 and $B7, purple) crossing from the left at x $1E, y $82, two pixels a frame. Built by $1F71 and then moved and recoloured."
+   "text": "Spawn handler 22: a vehicle two sprites wide (blocks $B6 and $B7, purple) crossing from the left at x $1E, y $82, two pixels a frame. Built by $1F71 and then moved and recoloured. When $1F71 finds no free slot it returns with Y = $0B, and the stores meant for the second half land on the player's own fields: x $041D, y $042D, block $045D and the speeds $046D and $047D."
   },
   {
    "address": 8049,
    "type": "line",
-   "text": "Spawn handler 19: a motorcycle and sidecar, two sprites wide (blocks $B0 and $B1, grey), crossing from the right at x $13E, y $82, two pixels a frame to the left. The leader runs behaviour 34 ($26BF) and the other half, in the next free slot, behaviour 16 (it is only carried along); each half's $04A1 names the other. Returns at once if no second slot is free, leaving the leader alone."
+   "text": "Spawn handler 19: a motorcycle and sidecar, two sprites wide (blocks $B0 and $B1, grey), crossing from the right at x $13E, y $82, two pixels a frame to the left. The leader runs behaviour 34 ($26BF) and the other half, in the next free slot, behaviour 16 (it is only carried along); each half's $04A1 names the other. The search for the second slot runs before the leader's own slot is marked. With no free slot at all (the spawner took over a busy one) it returns at once with Y = $0B and sets up nothing; when the leader's slot is itself the first free one (always at a life's start, $109B, and in play when it is the only one free) both halves are written into that slot, which ends as a lone carried half (behaviour 16, block $B1) drifting left."
   },
   {
    "address": 8163,
@@ -9198,12 +9198,12 @@
   {
    "address": 8611,
    "type": "line",
-   "text": "Spawn handler 4: a motorcycle and sidecar (blocks $B0 and $B1, brown) entering from the right at x $120, y $21, two pixels a frame to the left. The leader runs behaviour 15 ($2B2F), the other half behaviour 16 and is carried along; each half's $04A1 names the other."
+   "text": "Spawn handler 4: a motorcycle and sidecar (blocks $B0 and $B1, brown) entering from the right at x $120, y $21, two pixels a frame to the left. The leader runs behaviour 15 ($2B2F), the other half behaviour 16 and is carried along; the leader's $04A1 names the sidecar's slot, but the sidecar's own $04A1 is left as it was."
   },
   {
    "address": 8670,
    "type": "line",
-   "text": "The motorcycle's sidecar half, in the next free slot Y: each names the other in $04A1; it sits 24 pixels to the right of the rider at x $138, y $21, block $B1."
+   "text": "The motorcycle's sidecar half, in the next free slot Y, whose number goes into the rider's $04A1 (the sidecar's own $04A1 is not set); it sits 24 pixels to the right of the rider at x $138, y $21, block $B1."
   },
   {
    "address": 8721,
@@ -9228,7 +9228,7 @@
   {
    "address": 8902,
    "type": "line",
-   "text": "Spawn handler 1: a soldier (block $D5) running in from the right at x $15A, two pixels a frame, at the height of map row $9F counted from the trigger row, running behaviour 10 ($303D), who jumps after half a second."
+   "text": "Spawn handler 1: a soldier (block $D5) running in from the right at x $15A, two pixels a frame, at the height of map row $9F counted from the trigger row, running behaviour 10 ($303D), who jumps on his 30th frame."
   },
   {
    "address": 8971,
@@ -9258,7 +9258,7 @@
   {
    "address": 9191,
    "type": "line",
-   "text": "An enemy (slot Y) is hit by the player's bullet or grenade (X is the shot's slot). Adds its points from $254F, then by behaviour: a soldier lying in wait or in a foxhole (7, $1C) sinks out of sight (behaviour $1D, block $CB); the green soldier ($1A) leaves a white score sprite reading 2000 (block $BC, behaviour $13), though the points added are $14, 1,400; a guard ($11) hit by a bullet leaves a score sprite reading 1000 (block $BD) and counts in $04EC, and the second guard shot frees the prisoner ($04ED gets behaviour $14); a lorry half ($23, $24) blows up together with its other half ($2ECD); anything else falls dead (behaviour 6)."
+   "text": "An enemy (slot Y) is hit by the player's bullet or grenade (X is the shot, in slot X + 1). Adds its points from $254F, then by behaviour: a soldier lying in wait or in a foxhole (7, $1C) sinks out of sight (behaviour $1D, block $CB); the green soldier ($1A) leaves a white score sprite reading 2000 (block $BC, behaviour $13), though the points added are $14, 1,400; a guard ($11) hit by a bullet leaves a score sprite reading 1000 (block $BD) and counts in $04EC, and the second guard shot frees the prisoner ($04ED gets behaviour $14); a lorry half ($23, $24) blows up together with its other half ($2ECD); anything else falls dead (behaviour 6)."
   },
   {
    "address": 9229,
@@ -9293,7 +9293,7 @@
   {
    "address": 9365,
    "type": "line",
-   "text": "Runs the eleven enemy slots (5-15, X = 0-10 here, so the fields read $0412, $0422, $0432 ... for slot X + 5) once a frame. First zeroes the count of gate soldiers alive ($04F4), which their behaviour counts up again. A slot whose sprite has left the play area (y above $1E or from $C2 down, or x from $15B on) is freed first ($3570). Then each slot's behaviour number ($0492) picks its routine from $24D4, called through $24D1; a free slot has behaviour 0, which may start an ambient soldier in it."
+   "text": "Runs the eleven enemy slots (5-15, X = 0-10 here, so the fields read $0412, $0422, $0432 ... for slot X + 5) every frame. First zeroes the count of gate soldiers alive ($04F4), which their behaviour counts up again. A slot whose sprite has left the play area (y above $1E or from $C2 down, or x from $15B on) is freed first ($3570). Then each slot's behaviour number ($0492) picks its routine from $24D4, called through $24D1; a free slot has behaviour 0, which may start an ambient soldier in it. Two routines return with X changed and the walk goes on from there: a trench soldier's lob ($2C64, X = $FF from $3537) sends it back to enemy 0, and a box picked up ($2AA6, X = 0 from the effect request) back to enemy 1, so the slots from there up to theirs run twice that frame."
   },
   {
    "address": 9413,
@@ -9308,7 +9308,7 @@
   {
    "address": 9428,
    "type": "line",
-   "text": "The 41 enemy behaviours, by behaviour number: 0 $2CBB a free slot, 5 $31E7 a rifle soldier, 6 $3543 a soldier dying, 7 $2FA4 a soldier lying in wait, 8 $2F19 an enemy bullet, 9 $2F6F its spark, 10 $303D a soldier who jumps, 11 $2EA1 an enemy's grenade, 12 $386D an explosion, 13 $2BC1 a soldier in a trench, 14 $2EED a mortar bomb, 15 $2B2F a motorcycle that stops, 16 $2578 the half of a pair that is carried, 17 $2B0C a guard, 18 $2AE9 a prisoner, 19 $2ADB a score sprite, 20 $2ABC a freed prisoner, 21 $30BF a soldier risen from cover, 22 $2A5A a box of grenades, 23 $2A16 a soldier walking in, 24 $299D and 25 $2938 grenade throwers, 26 $2906 the green soldier, 27 $31D2 a soldier from the gate, 28 $2858 a foxhole, 29 $2842 a soldier sinking, 30 $27C6 a bunker's gun, 31 and 33 $2F61 a bomb, 32 $2706 a bomb thrower, 34 $26BF a vehicle crossing, 35 $2678 a lorry's front, 36 $2679 its back, 37 $2657 a jeep, 38 $25DB a door, 39 $25D2 a sniper, 40 $2579 a mortar man. Entries 1-4 are the player's shot routines ($3917, $365C, $36E0, $371E), which no enemy is given."
+   "text": "The 41 enemy behaviours, by behaviour number: 0 $2CBB a free slot, 5 $31E7 a rifle soldier, 6 $3543 a soldier dying, 7 $2FA4 a soldier lying in wait, 8 $2F19 an enemy bullet, 9 $2F6F its spark, 10 $303D a soldier who jumps, 11 $2EA1 an enemy's grenade, 12 $386D an explosion, 13 $2BC1 a soldier in a trench, 14 $2EED a mortar bomb, 15 $2B2F a motorcycle that stops, 16 $2578 the half of a pair that is carried, 17 $2B0C a guard, 18 $2AE9 a prisoner, 19 $2ADB a score sprite, 20 $2ABC a freed prisoner, 21 $30BF a soldier risen from cover, 22 $2A5A a box of grenades, 23 $2A16 a soldier walking in, 24 $299D and 25 $2938 grenade throwers, 26 $2906 the green soldier, 27 $31D2 a soldier from the gate, 28 $2858 a foxhole, 29 $2842 a soldier sinking, 30 $27C6 a bunker's gun, 31 and 33 $2F61 a bomb, 32 $2706 a bomb thrower, 34 $26BF a vehicle crossing, 35 $2678 a lorry's front, 36 $2679 its back, 37 $2657 a jeep, 38 $25DB a door, 39 $25D2 a sniper, 40 $2579 a mortar man. Entries 1-4 are the player's shot routines ($3917, $365C, $36E0, $371E), which no enemy is given in play: the name entry gives its gunsight, slot 5, behaviour 1 ($0BB8), but the enemy loop does not run there."
   },
   {
    "address": 9429,
@@ -9333,12 +9333,12 @@
   {
    "address": 9593,
    "type": "line",
-   "text": "Behaviour 40, the mortar man in his trench. Every 64 frames he fires a mortar bomb at the player ($32CF, then made behaviour $0E with block $D0, black); the shared flag $04EA then plays his three-frame recoil ($CF, $CE, $CD at frames 3, 15 and 20 of the 32) and clears itself. The flag is shared with the trench soldiers ($2BC1), so one man's shot can set another's animation going."
+   "text": "Behaviour 40, the mortar man in his trench. Every 64 frames he fires a mortar bomb at the player when $32CF can (a free slot, the player on his side of x 256), the bomb then made behaviour $0E with block $D0, black; the shared flag $04EA, set whether or not a bomb went out, then plays his three-frame recoil ($CF, $CE, $CD at frames 3, 15 and 20 of the 32) and clears itself. The flag is shared with the trench soldiers ($2BC1), so one man's shot can set another's animation going."
   },
   {
    "address": 9638,
    "type": "line",
-   "text": "Every 64 frames of his timer the mortar man fires at the player ($32CF) and starts his recoil ($04EA = 1)."
+   "text": "Every 64 frames of his timer the mortar man tries to fire at the player ($32CF, which needs a free slot and the player on his side of x 256) and starts his recoil ($04EA = 1) either way."
   },
   {
    "address": 9682,
@@ -9378,7 +9378,7 @@
   {
    "address": 9919,
    "type": "line",
-   "text": "Behaviour 34, the leading half of a vehicle crossing the screen: every 16 frames it moves itself and its other half ($04A1) down a pixel. The bob back up copies the motorcycle's at $2B84 but compares the y just stored with $10 instead of the timer, so it almost never runs and the vehicle drifts down."
+   "text": "Behaviour 34, the leading half of a vehicle crossing the screen: every 16 frames it moves itself and its other half ($04A1) down a pixel. The bob back up copies the motorcycle's at $2B84, but with the timer masked to its low four bits the value compared with $10 is 1-15, or the y just stored on the frame of the step down, so it would run only at y $10, outside the play area, and the vehicle drifts down."
   },
   {
    "address": 9941,
@@ -9393,7 +9393,7 @@
   {
    "address": 9990,
    "type": "line",
-   "text": "Behaviour 32, the bomb thrower: walks in its heading, animated from $27C2 every 8 frames. Every 32 frames, if the player is level with him or below, he stops for a moment (block $E8) and throws a bomb from his own position: behaviour $21 (33), white, falling two pixels a frame, drawn and aimed by where the player is: down-left (block $EA) when the player is more than 30 pixels to the left, down-right ($EB) more than 30 to the right, straight down ($E9) otherwise. The bomb explodes after 90 frames ($2F61)."
+   "text": "Behaviour 32, the bomb thrower: walks in its heading, animated from $27C2 every 8 frames. Every 32 frames, if the player is level with him or below and a slot is free, he stops for a moment (block $E8) and throws a bomb from his own position: behaviour $21 (33), white, falling two pixels a frame, drawn and aimed by where the player is: down-left (block $EA) when the player is 30 or more pixels to his left, and always when the thrower is right of x 255; down-right ($EB) when the player is more than 30 to his right; straight down ($E9) otherwise. The player's x-high is not looked at. The bomb explodes after 90 frames ($2F61)."
   },
   {
    "address": 10038,
@@ -9413,7 +9413,7 @@
   {
    "address": 10182,
    "type": "line",
-   "text": "Behaviour 30, the gun in a bunker's slit: every 32 frames, if the player is level with it or below, it fires a shell (behaviour $1F (31), black, block $D2) from six pixels below it and eight to the side it faces, moving one pixel down and two across a frame, which explodes after 90 frames ($2F61). Only a grenade destroys it ($37B1)."
+   "text": "Behaviour 30, the gun in a bunker's slit: every 32 frames, if the player is level with it or below and a slot is free, it fires a shell (behaviour $1F (31), black, block $D2) from six pixels below it and eight to the side it faces, moving one pixel down and two across a frame, which explodes after 90 frames ($2F61). Only a grenade destroys it ($37B1)."
   },
   {
    "address": 10291,
@@ -9493,7 +9493,7 @@
   {
    "address": 10653,
    "type": "line",
-   "text": "Behaviour 24, a soldier who throws grenades as he goes: every 64 frames he stops (block $E3), throws at frame 6 of the 64 ($32CF), and at frame 20 sets off again, his heading turned a sixteenth of a turn either way at random. Walking, he turns from walls, goes behind scenery, and fires his rifle ($33B2)."
+   "text": "Behaviour 24, a soldier who throws grenades as he goes: every 64 frames he stops (block $E3), throws at frame 6 of the 64 ($32CF), and at frame 20 sets off again, his heading turned a sixteenth of a turn either way at random. On every other frame of the 64, standing or walking, he turns from walls, goes behind scenery and may fire his rifle ($33B2)."
   },
   {
    "address": 10687,
@@ -9508,7 +9508,7 @@
   {
    "address": 10761,
    "type": "line",
-   "text": "Every frame: the map ahead ($2885), turning from walls ($28BA), going behind scenery ($28F0), and a chance to fire ($33B2)."
+   "text": "Every frame but frames 0, 6 and 20 of each 64: the map ahead ($2885), turning from walls ($28BA), going behind scenery ($28F0), and a chance to fire ($33B2)."
   },
   {
    "address": 10774,
@@ -9523,7 +9523,7 @@
   {
    "address": 10842,
    "type": "line",
-   "text": "Behaviour 22, a box of grenades. When the player stands on it (same x-high, x within 15 pixels, y from 10 above to 18 below) he gains three grenades, the count is redrawn, 1,000 points are added and effect 0 plays, and the box goes. The box flashes between colours $0B and $08 every 8 frames."
+   "text": "Behaviour 22, a box of grenades. When the player stands on it (same x-high, the box's x from 14 pixels left of his to 15 right, its y from 9 above his to 18 below) he gains three grenades, the count is redrawn, 1,000 points are added and effect 0 plays, and the box goes. The box flashes between colours $0B and $08 every 8 frames. The effect request returns with X = 0 ($5F56 loads it from $5526, 0 while effects are on), so on the frame of the pickup that colour store lands on enemy 0 and the enemy loop goes on from enemy 1 ($2495). When the 1,000 points cross a multiple of 10,000, the extra life's effect zeroes X before $3570 too, which then frees enemy 0 instead; unless the box is enemy 0, the loop reaches it again and it pays out a second time, six grenades and 2,000 points in all."
   },
   {
    "address": 10895,
@@ -9583,12 +9583,12 @@
   {
    "address": 11201,
    "type": "line",
-   "text": "Behaviour 13, a soldier in a trench, shown with the recoil frames he shares with the mortar man ($04EA). Every 64 frames, if the player's x is from $2F to $FF (x-high clear), he lobs a mortar bomb (behaviour $0E, block $D0, black) up and to the left: its x-speed is ($12E - the player's x) / 64 made negative, -1 to -3, so always leftward, and its y-speed the distance down to the player / 64, less 2. When the map has carried him down to y $82 he climbs out and becomes a rifle soldier (behaviour 5) walking up the screen."
+   "text": "Behaviour 13, a soldier in a trench, shown with the recoil frames he shares with the mortar man ($04EA). Every 64 frames, if a slot is free and the player's x is from $2F to $FF (x-high clear), he lobs a mortar bomb (behaviour $0E, block $D0, black) to the left: its x-speed is ($12E - the player's x) / 64 made negative, -1 to -3, so always leftward, and its y-speed the distance down to the player / 64, less 2; the distance is shifted as an unsigned byte, so with the player above him the y-speed comes out 0 or 1. When the map has carried him down to y $82 he climbs out and becomes a rifle soldier (behaviour 5) walking up the screen."
   },
   {
    "address": 11246,
    "type": "line",
-   "text": "The trench soldier climbs out when the map has carried him down to y $82: block $98, stopped, then a rifle soldier walking up."
+   "text": "The trench soldier climbs out when the map has carried him down to y $82: block $98, x-speed 0, y-speed -1, heading up (0), timer zero, and from then on a rifle soldier (behaviour 5) walking up."
   },
   {
    "address": 11283,
@@ -9628,7 +9628,7 @@
   {
    "address": 11451,
    "type": "line",
-   "text": "Behaviour 0, a free slot, which may start a soldier of its own. At the top of the map ($0403 = 0), while gate soldiers remain ($04EF, 20 a life), one chance in 128 a frame sends one out: it sets the enemies' fire mask to the slowest ($0504 = $3F), counts the soldier off and makes a gate soldier (behaviour 27) by area: at x $8C-$CB, from y $64 in area 3 and y $3C in the others, except that in area 1 half of them enter from a side ($2CA3). Lower down the map it goes on to $2D63."
+   "text": "Behaviour 0, a free slot, which may start a soldier of its own. At the top of the map ($0403 = 0), while gate soldiers remain ($04EF, 20 a life), one chance in 128 for each free slot each frame sends one out: it sets the enemies' fire mask to the slowest ($0504 = $3F), counts the soldier off and makes a gate soldier (behaviour 27) by area: at x $8C-$CB, from y $64 in area 3 and y $3C in the others, except that in area 1 half of them enter from a side ($2CA3). Lower down the map it goes on to $2D63."
   },
   {
    "address": 11479,
@@ -9648,7 +9648,7 @@
   {
    "address": 11619,
    "type": "line",
-   "text": "Lower down the map, one frame in four: one chance in 256 sends a rifle soldier down from the top of the screen (y $28) at a random x where the map is clear (terrain 0); otherwise one chance in 256 sends a grenade thrower (behaviour 24) in from a side at a random height from $3C: from the left edge (block $D9, heading right of 2-5) where the map is clear, or from the right edge (heading 11-14) where the cell is character $30."
+   "text": "Lower down the map, run for each free enemy slot each frame. One time in four at random (a random number's low two bits, $3FE8) it tries: one chance in 256 sends a rifle soldier down from the top of the screen (y $28) at a random x where the map is clear (terrain 0); otherwise one chance in 256 sends a grenade thrower (behaviour 24) in from a side at a random height from $3C: from the left edge (block $D9, heading right of 2-5) where the map is clear, or from the right edge (heading 11-14) where the cell is character $30."
   },
   {
    "address": 11678,
@@ -9663,7 +9663,7 @@
   {
    "address": 11725,
    "type": "line",
-   "text": "One frame in 256 a grenadier comes in from a side, at a random height from y $3C: from the left at x $18 where the map there is clear (terrain 0), as behaviour $18 (24) with block $D9 and a heading to the right of 2-5."
+   "text": "One chance in 256 at each try a grenadier comes in from a side, left or right at random, at a random height from y $3C: from the left at x $18 where the map there is clear (terrain 0), as behaviour $18 (24) with block $D9 and a heading to the right of 2-5."
   },
   {
    "address": 11839,
@@ -9743,12 +9743,12 @@
   {
    "address": 12270,
    "type": "line",
-   "text": "Turns a soldier who lies or crouches to face the player, choosing from three frames: down-left (block $CA) when the player is more than 50 pixels to his left, down-right ($C9) more than 50 to his right, straight down ($C8) otherwise. Sets his facing ($04AC) to match."
+   "text": "Turns a soldier who lies or crouches to face the player, choosing from three frames: down-left (block $CA) when the player is more than 50 pixels to his left, down-right ($C9) when he is 50 or more to his right, straight down ($C8) otherwise. Sets his facing ($04AC) to match."
   },
   {
    "address": 12349,
    "type": "line",
-   "text": "Behaviour 10, a soldier who runs and jumps: runs in his heading for 30 frames, then leaps (y-speed -2, block $C6 going left or $D3 going right, one pixel a frame across, the next block, $C7 or $D4, five frames later), falling back as gravity adds one to his y-speed every 8 frames, and when it reaches 3 he lands and becomes a rifle soldier (behaviour 5) walking up the screen."
+   "text": "Behaviour 10, a soldier who runs and jumps: runs in his heading until his timer reaches 30 (30 frames for one from the spawn list, none for one dropped from a lorry, whose timer starts at 29), then leaps (y-speed -2, block $C6 going left or $D3 going right, one pixel a frame across, the next block, $C7 or $D4, five frames later), falling back as gravity adds one to his y-speed every 8 frames, and when it reaches 3 he lands and becomes a rifle soldier (behaviour 5) walking up the screen."
   },
   {
    "address": 12424,
@@ -9763,12 +9763,12 @@
   {
    "address": 12479,
    "type": "line",
-   "text": "Behaviour 21, a soldier risen from cover: walks with the shared walk frames, turning from walls and behind scenery from frame 15. One frame in eight he turns to face the player's direction ($310A); otherwise every 32 frames he changes his walking heading ($3237). He never fires."
+   "text": "Behaviour 21, a soldier risen from cover: walks with the shared walk frames, turning from walls and behind scenery from frame 15. With one chance in eight each frame he turns to face the player's direction ($310A); otherwise every 32 frames he changes his walking heading ($3237). He never fires."
   },
   {
    "address": 12554,
    "type": "line",
-   "text": "Sets enemy X's facing ($04AC) to the eighth of a turn that points at the player: left, right or straight by whether the player is more than 30 pixels to the side, up, down or level by whether he is more than 20 above or below. Leaves it alone when the player is inside that box. Only the facing changes; the soldier keeps walking his own heading ($04A1), so he can walk one way while facing and firing another."
+   "text": "Sets enemy X's facing ($04AC) to the eighth of a turn that points at the player: right when the player is more than 30 pixels to the right, left when he is 30 or more to the left, straight otherwise; up when he is 20 or more above, down when he is more than 20 below, level otherwise. Leaves it alone when the player is inside that box. Only the facing changes; the soldier keeps walking his own heading ($04A1), so he can walk one way while facing and firing another. The x test adds 30 to the low byte of the soldier's x and drops the carry ($3118), so a soldier at x 226-255 on the left half of the 256 line takes a player to his left, beyond the wrapped sum, as one on his right, and faces right (live: soldier at x $E8, player at $64, heading 4)."
   },
   {
    "address": 12603,
@@ -9778,7 +9778,7 @@
   {
    "address": 12606,
    "type": "line",
-   "text": "The player is to the right: up-right, right or down-right depending on whether he is more than 20 pixels above, level, or more than 20 below."
+   "text": "The player is to the right: up-right, right or down-right depending on whether he is 20 or more pixels above, level, or more than 20 below."
   },
   {
    "address": 12643,
@@ -9788,17 +9788,17 @@
   {
    "address": 12680,
    "type": "line",
-   "text": "The player is above: straight up when he is within 30 pixels in x, up-right or up-left when he is further to a side."
+   "text": "The player is above, within 30 pixels in x: straight up. The tests for up-right and up-left that follow repeat the caller's x test, so they never pass."
   },
   {
    "address": 12717,
    "type": "line",
-   "text": "The player is below: straight down when he is within 30 pixels in x, down-right or down-left when he is further to a side."
+   "text": "The player is below, within 30 pixels in x: straight down. The tests for down-right and down-left that follow repeat the caller's x test, so they never pass."
   },
   {
    "address": 12754,
    "type": "line",
-   "text": "Behaviour 27, a soldier from the gate: counts himself alive for this frame ($04F4), and one frame in 64 at random stops and throws a grenade ($32CF). Otherwise a rifle soldier."
+   "text": "Behaviour 27, a soldier from the gate: counts himself alive for this frame ($04F4), and with one chance in 64 each frame stops and tries to throw a grenade ($32CF). Either way he then runs as a rifle soldier ($31E7)."
   },
   {
    "address": 12775,
@@ -9818,7 +9818,7 @@
   {
    "address": 12855,
    "type": "line",
-   "text": "Gives enemy X a new walking heading ($04A1) and speeds: half the time towards the player (down-right, down-left, up-right or up-left by where he is), half the time the old heading turned a sixteenth either way or kept."
+   "text": "Gives enemy X a new walking heading ($04A1) and speeds: half the time a diagonal picked by where the player is (up-right or down-right when he is to the right, down-left when he is to the left and level or below, down-right, away from him, when he is to the left and above), half the time the old heading turned a sixteenth either way or kept. The player's offsets are tested as signed bytes, so one more than 127 pixels below counts as above, and in the same x-high half one more than 127 pixels to a side counts as on the other side."
   },
   {
    "address": 12916,
@@ -9853,7 +9853,7 @@
   {
    "address": 13027,
    "type": "line",
-   "text": "No slot was free: Y = $FF tells the caller nothing was thrown."
+   "text": "No slot was free, or the thrower and the player are on different sides of x 256: Y = $FF tells the caller nothing was thrown."
   },
   {
    "address": 13030,
@@ -9883,12 +9883,12 @@
   {
    "address": 13234,
    "type": "line",
-   "text": "Fires an enemy's rifle. Only on frames of its timer where (timer AND the fire mask $0504) is 0, which is every 64, 32 or 16 frames by area and loop ($3EB4), and only with a free slot. The player's place is classed into one of eight directions from the soldier by the same boxes as $310A (30 pixels across, 20 up and down); the soldier fires only if his facing is already that direction. The bullet is behaviour 8, block $90, white, from the muzzle offset for that facing ($35F9, $3609), at two pixels a frame straight or one each way diagonally ($3517, $3527)."
+   "text": "Fires an enemy's rifle. Only on frames of its timer where (timer AND the fire mask $0504) is 0, which is every 64, 32 or 16 frames by area and loop ($3EB4), every 64 once the gate soldiers have started coming ($2CD1), and only with a free slot. The player's place is classed into one of eight directions from the soldier by the same boxes as $310A (30 pixels across, 20 up and down, with the same wrap of x + 30 past 255 at $33D8); the soldier fires only if his facing is already that direction. The bullet is behaviour 8, block $90, white, from the muzzle offset for that facing ($35F9, $3609), at two pixels a frame straight or one each way diagonally ($3517, $3527). Live, a soldier held at x $E8 with the player level at x $64 fired every bullet to the right, away from him."
   },
   {
    "address": 13254,
    "type": "line",
-   "text": "No shot this frame: the fire mask ($0504) kept it back."
+   "text": "No shot this frame: the fire mask ($0504) kept it back, or no enemy slot was free."
   },
   {
    "address": 13310,
@@ -9938,17 +9938,17 @@
   {
    "address": 13635,
    "type": "line",
-   "text": "Behaviour 6, a soldier dying: 24 frames from $3558, flickering between his falling frames and the blank block, then the slot is freed ($3570)."
+   "text": "Behaviour 6, a soldier dying: 23 frames from $3558, flickering between his falling frames and the blank block, then the slot is freed ($3570)."
   },
   {
    "address": 13656,
    "type": "line",
-   "text": "The dying soldier's 24 frames: $BE and $BF (arms flung out) each alternating with $FF, the blank block, so he flickers as he falls."
+   "text": "The dying soldier's frames, read from the second entry (his timer counts up before the read, $3543, and the slot is freed at 24), so he shows 23 frames: $BE and $BF (arms flung out) each alternating with $FF, the blank block, so he flickers as he falls. The first entry is never read."
   },
   {
    "address": 13680,
    "type": "line",
-   "text": "Frees enemy slot X: behaviour 0, stopped, parked off the right of the screen (x $164) at its own y ($141C) with the blank block. Called when an enemy leaves the screen, is picked up or finishes dying."
+   "text": "Frees enemy slot X: behaviour 0, stopped, parked off the right of the screen (x $164) at its own y ($141C) with the blank block. Called when an enemy leaves the screen ($24B1), a box of grenades is picked up ($2AA1), a dying or shot-down soldier's frames end ($3555, $2855), a freed prisoner has finished waving ($2AD6) and a score sprite's time is up ($2AE6)."
   },
   {
    "address": 13711,
@@ -9968,7 +9968,7 @@
   {
    "address": 13773,
    "type": "line",
-   "text": "Turns the player's facing one step anticlockwise (sixteenths, kept in 0-15)."
+   "text": "The DEC that turns the player's facing one step anticlockwise, taken when the target is less than half a turn anticlockwise; after the two INCs above it, the net step is clockwise. The facing is then kept in 0-15 (sixteenths)."
   },
   {
    "address": 13785,
@@ -10013,7 +10013,7 @@
   {
    "address": 13916,
    "type": "line",
-   "text": "Shot type 2, the player's grenade in flight. For its first 15 frames the player's sprite shows the throw ($36DB); every 8 frames the grenade's block steps through $36D5 so it seems to rise and fall. It goes behind scenery where the map says. At frame 40 it becomes a blast (type 4): stopped, block $AF, orange."
+   "text": "Shot type 2, the player's grenade in flight. For the first 14 frames of its count, the throw's own frame included, the player's sprite shows the throw ($36DB), unless the stick is pushed, when $3B8E puts a walk frame over it; every 8 frames the grenade's block steps through $36D5 so it seems to rise and fall. It goes behind scenery where the map says. At frame 40 it becomes a blast (type 4): stopped, block $AF, orange."
   },
   {
    "address": 14005,
@@ -10023,7 +10023,7 @@
   {
    "address": 14037,
    "type": "line",
-   "text": "The grenade's blocks every 8 frames of its flight ($92, $91, $91, $92, $93, $93: small, larger at the top of its arc, small again), then the player's throwing frames ($36DB: $A4, $A5, $DE, $98, a frame every four). The last byte, $98, is not read."
+   "text": "The grenade's blocks, read at frames 8, 16, 24, 32 and 40 of its flight from the second byte ($91, $91, $92, $93, $93): the grenade starts as $93, the smallest ($38A5), is largest at the top of its arc and small again as it lands. The first byte, $92, is never read. Then the player's throwing frames ($36DB)."
   },
   {
    "address": 14043,
@@ -10038,7 +10038,7 @@
   {
    "address": 14070,
    "type": "line",
-   "text": "A spark's blocks, frame by frame: $94-$97 growing, $96 twice, $94, then $FF blank. Used for the player's bullets and the enemies'."
+   "text": "A spark's blocks, frame by frame: $94-$97 growing, $96 twice, $94, then $FF, the blank block, twice. Used for the player's bullets and the enemies'."
   },
   {
    "address": 14079,
@@ -10068,7 +10068,7 @@
   {
    "address": 14257,
    "type": "line",
-   "text": "A grenade's blast reaches a bunker's gun: 1,000 points and effect 2. The gun becomes an explosion (behaviour $0C) ten pixels higher, the blast moves to the bunker, and the map is changed to the ruin. For the gun aimed down-left (heading $0A) the ruin is stamp 3 at a fixed place in area 1's map ($859A, $382A); for the other, stamp 2 at the map cell found from the gun's position ($1711). The playfield is redrawn at once ($3F75)."
+   "text": "A grenade's blast reaches a bunker's gun: 1,000 points and effect 2. The gun becomes an explosion (behaviour $0C) ten pixels higher, the blast moves to the bunker, and the map is changed to the ruin. For the gun aimed down-left (heading $0A) the ruin is stamp 3 at a fixed place in area 1's map ($859A, $382A); for any other gun, stamp 2 at the map cell found from the gun's position ($1711). The playfield is redrawn at once ($3F75)."
   },
   {
    "address": 14371,
@@ -10078,17 +10078,17 @@
   {
    "address": 14378,
    "type": "line",
-   "text": "The left-hand bunker's gun (heading $0A): the blast moves to the bunker, the gun becomes an explosion and stamp 3, the ruin, goes over the bunker at $859A."
+   "text": "The gun of the bunker at the right of area 1's map, facing left (heading $0A): the blast moves to the bunker, the gun becomes an explosion and stamp 3, the ruin, goes over the bunker at $859A (columns 34-39)."
   },
   {
    "address": 14445,
    "type": "line",
-   "text": "Behaviour 12, an enemy's explosion (from a thrown grenade, a mortar bomb, a bomb, a lorry or a destroyed gun): 20 frames from $37AC, then the slot is freed. It kills the player on touch ($1074)."
+   "text": "Behaviour 12, an enemy's explosion (from a thrown grenade, a mortar bomb, a bunker's shell, a bomb, a lorry or a destroyed gun): 20 frames from $37AC, then the slot is freed. It kills the player on touch ($1074)."
   },
   {
    "address": 14501,
    "type": "line",
-   "text": "The player throws a grenade, from the space bar: not while dying, not once the area is won (no gate soldiers left to come or alive), not with slot 4 busy and not with none left. The key is read by REMEMBER's routine at $5F6A, which stands where the 1985 code read $DC01; $EF there is the space bar. The grenade (slot 4, type 2, block $93, light blue) leaves the player's position at two pixels a frame straight up; the player turns to face up and shows his throwing frame ($A4), the count goes down by one and is redrawn, and effect 1 plays."
+   "text": "The player throws a grenade, from the space bar: not while dying, not once the area is won (no gate soldiers left to come or alive), not with slot 4 busy and not with none left. The key is read by REMEMBER's routine at $5F6A, which stands where the 1985 code read $DC01; $EF there is the space bar. The grenade (slot 4, type 2, block $93, light blue) leaves the player's position at two pixels a frame straight up; his direction ($04E0) is set to up, so with the stick centred his facing turns that way, and he shows his throwing frame ($A4) until a pushed stick puts a walk frame over it ($3B8E); the count goes down by one and is redrawn, and effect 1 plays."
   },
   {
    "address": 14526,
@@ -10123,22 +10123,22 @@
   {
    "address": 14787,
    "type": "line",
-   "text": "Shot type 0, an empty slot, which fires a bullet when fire is held. Not while dying or once the area is won. $04DF counts up once for each empty slot each frame from $FF, set when fire is released: the first count makes 0, so a press fires at once; the next bullet comes when it reaches 8, two or three frames later, and then it stops there until fire is let go. So each press gives two bullets. The bullet (type 1, block $90, white) leaves from the muzzle offset for the player's facing ($35F9, $3609) at its speed ($35D9, $35E9)."
+   "text": "Shot type 0, an empty slot, which fires a bullet when fire is held. Not while dying or once the area is won. $04DF counts up once for each empty slot each frame from $FF, set when fire is released: the first count makes 0, so a press fires at once; the next bullet comes when it reaches 8, two frames later with all four shot slots empty, three with three, longer with fewer, and then it stops there until fire is let go. So each press gives two bullets. The bullet (type 1, block $90, white) leaves from the muzzle offset for the player's facing ($35F9, $3609) at its speed ($35D9, $35E9)."
   },
   {
    "address": 14887,
    "type": "line",
-   "text": "Not ready to fire."
+   "text": "The return, reached after a bullet is fired and when the repeat count ($04DF) is at 8 or between firing values."
   },
   {
    "address": 14888,
    "type": "line",
-   "text": "Fire is up: the repeat count goes back to $FF, so the next press fires at once."
+   "text": "Fire is up, or the player is dying or the area is won: the repeat count goes back to $FF, so the next press fires at once."
   },
   {
    "address": 14894,
    "type": "line",
-   "text": "The area is won: all twenty gate soldiers have come and gone. Marks the walk ($04F7, which also stops enemies touching the player), draws the gate open ($15BC) and redraws the playfield, then falls into the walk."
+   "text": "The area is won: no gate soldiers are left to come ($04EF) and none was counted alive this frame ($04F4). Normally that means all twenty have come and gone, but a soldier entering area 1 from a side is not counted on his first frame ($2D08), so the last one can end the area as he appears. Marks the walk ($04F7, which also stops enemies touching the player), draws the gate open ($15BC, which does nothing in area 3) and redraws the playfield, then falls into the walk."
   },
   {
    "address": 14907,
@@ -10158,7 +10158,7 @@
   {
    "address": 14988,
    "type": "line",
-   "text": "The player, once a frame. Starts the walk out when the area is won. Otherwise the joystick sets his speeds and the direction he faces: up a pixel a frame while he is below y $A4 (y $6E at the top of the map), and above that, up scrolls the map instead ($0404 = $FF); down to y $C1; left and right two pixels a frame between x $18 and $141. Walking, he takes the shared walk frames ($3CA2) for the joystick's direction, a frame every four. His facing turns towards it ($35B0). Then the map four pixels ahead is checked ($3BB1)."
+   "text": "The player, once a frame while he is not dying. Starts the walk out when the area is won. Otherwise the joystick sets his speeds and the direction he walks ($04E0): up a pixel a frame while he is at y $A4 or lower on the screen, and above that, up scrolls the map instead ($0404 = $FF); at the top of the map ($0403 = 0) nothing scrolls and he walks up while he is at y $6E or lower; down to y $C1; left and right two pixels a frame between x $17 and $141 (his x is always odd). Walking, he takes the shared walk frames ($3CA2) for the joystick's direction, a frame every four. His facing turns towards it ($35B0). Then the map ahead of him, four pixels across or three up or down, is checked ($3BB1)."
   },
   {
    "address": 15036,
@@ -10173,7 +10173,7 @@
   {
    "address": 15098,
    "type": "line",
-   "text": "Joystick left: two pixels a frame to the left (heading $0C), not past x $18."
+   "text": "Joystick left: two pixels a frame to the left (heading $0C) while x is $18 or more (or past 255), so his x, always odd, stops at $17."
   },
   {
    "address": 15127,
@@ -10208,7 +10208,7 @@
   {
    "address": 15376,
    "type": "line",
-   "text": "The player walks into water or a hole: dying with $0503 = 2, effect 4, and his sprite moved four steps on into it, 12 pixels lower. The death count ($04E6) is set from A as the sound routine leaves it ($0F when an effect plays, $5F64), not 0, so the fall lasts about 65 frames where a hit lasts 79."
+   "text": "The player walks into water or a hole: dying with $0503 = 2, effect 4, and his sprite moved on into it, to six of his x-steps and six of his y-steps and scroll-steps from where he stood and 12 pixels lower. The death count ($04E6) is set from A as the sound routine leaves it ($0F when an effect plays, $5F64), not 0, so the fall lasts about 65 frames where a hit lasts 79."
   },
   {
    "address": 15386,
@@ -10283,7 +10283,7 @@
   {
    "address": 15538,
    "type": "line",
-   "text": "The end of the last area: clears the slots and puts eleven sprites across the fortress (x, x-high and y from $3D09, $3D14, $3D1F), seven in a row at y $32 and four at y $6E, all block $EE, red. For 255 frames each shows block $EE or, one frame in four at random, nothing, so they flicker like fire. Then back to the main loop's next area."
+   "text": "The end of the last area: clears the slots and puts eleven sprites across the fortress (x, x-high and y from $3D09, $3D14, $3D1F), seven in a row at y $32 and four at y $6E, all block $EE, red. For 255 frames each shows block $EE or, with one chance in four each frame, nothing, so they flicker like fire. Then back to the main loop's next area."
   },
   {
    "address": 15592,
@@ -10343,7 +10343,7 @@
   {
    "address": 15840,
    "type": "line",
-   "text": "Sets up a life: clears the slots; the player at x $97, y $B4, facing up, block $98, blue, not dying. The map restarts at the first checkpoint at or below the row the screen had reached ($3ED0), with twenty gate soldiers to come ($04EF), the area's tables set ($1427) and the gate drawn shut ($15BC). Area 1's three bunkers are put back whole in its map ($14B5 at $88C0, $859A and $8370), the enemies' fire rate is set for the area and loop ($3EB4), the gunsight's block $FF is blanked, the sprites are sorted, everything already on screen in the spawn list is placed ($109B), and the grenades are topped up to five."
+   "text": "Sets up a life: clears the slots; the player at x $97, y $B4, facing up, block $98, blue, not dying. The map restarts at the first checkpoint at or below the row the screen had reached ($3ED0), with twenty gate soldiers to come ($04EF), the area's tables set ($1427) and the gate drawn shut ($15BC, areas 0 and 1). Area 1's three bunkers are put back whole in its map ($14B5 at $88C0, $859A and $8370), the enemies' fire rate is set for the area and loop ($3EB4), sprite block $FF, the blank one every hidden sprite shows, is zeroed ($3E93), the sprites are sorted, everything already on screen in the spawn list is placed ($109B), and the grenades are topped up to five."
   },
   {
    "address": 15907,
@@ -10363,12 +10363,12 @@
   {
    "address": 16052,
    "type": "line",
-   "text": "The enemies' fire mask for the area counter's low three bits ($0504, set at each life's start): $3F for the first area (a shot every 64 frames at most), $1F for the second, $0F for every other. Since the counter goes 0, 1, 3, 4, 5, 7, 8 ..., the third area of the first loop fires every 16, then the second loop's areas fire every 16, 16 and 16, and the third loop begins again at 64."
+   "text": "The enemies' fire mask for the area counter's low three bits ($0504, set at each life's start): $3F for the first area (a shot every 64 frames at most), $1F for the second, $0F for every other. Since the counter goes 0, 1, 3, 4, 5, 7, 8 ..., the third area of the first loop fires every 16, then the second loop's areas fire every 16, 16 and 16, and the third loop begins again at 64. At the top of the map each gate soldier sent out sets the mask back to $3F ($2CD1) for the rest of the life."
   },
   {
    "address": 16060,
    "type": "line",
-   "text": "Checkpoints, four lists of five map rows: $13, $3D, $61, $83 and the last, $AF for area 0 ($3EBC), $A6 for areas 1 and 2 ($3EC1), $B2 ($3EC6, which no pointer names) and $A6 for area 3 ($3ECB). A life restarts at the first row in the list at or below the row reached, so an early death in area 0 restarts at row $AF, ten rows below where the area began ($A5)."
+   "text": "Checkpoints, four lists of five map rows: $13, $3D, $61, $83 and the last, $AF for area 0 ($3EBC), $A6 for areas 1 and 2 ($3EC1), $B2 ($3EC6, which no pointer names) and $A6 for area 3 ($3ECB). A life restarts at the first row in the list at or below the row reached. Each area begins the same way: a new area parks the map at row $A5 ($08B8), so play starts at the checkpoint below it, row $AF in area 0 and $A6 in areas 1 and 3 (live)."
   },
   {
    "address": 16065,
@@ -10393,7 +10393,7 @@
   {
    "address": 16088,
    "type": "line",
-   "text": "46 bytes of code nothing reaches: a bubble sort of the sprite order ($4B-$5A) by y, swapping neighbours until a pass makes no swap, using $D7 as the flag. The Shell sort at $3F06 replaced it."
+   "text": "46 bytes of code nothing reaches: a bubble sort of the sprite order ($4B-$5A) by y, swapping neighbours until a pass makes no swap, using $D7 as the flag. The game sorts with the Shell sort at $3F06 instead."
   },
   {
    "address": 16134,
@@ -10468,12 +10468,12 @@
   {
    "address": 16360,
    "type": "line",
-   "text": "The random number generator: a 16-bit state at $0400/$0401, shifted left, mixed by an exclusive-or and an add; returns the new $0400 in A."
+   "text": "The random number generator: a 16-bit state at $0400/$0401, rotated left a bit, mixed by an exclusive-or and an add; returns the new $0400 in A."
   },
   {
    "address": 16383,
    "type": "line",
-   "text": "Seeds the generator from the raster line ($D012), trying again if the result would be 0."
+   "text": "Seeds the generator from the raster line ($D012): $0400 takes the line's low byte and $0401 that byte shifted left, read again while $0401 comes out 0 (a low byte of $00 or $80)."
   },
   {
    "address": 16396,
@@ -10508,7 +10508,7 @@
   {
    "address": 16576,
    "type": "line",
-   "text": "The score line under the playfield, 40 characters in the game's alphabet: \"SCORE\", the score's digit spaces and its fixed \"00\", the grenade symbol ($3C, $3F), \"MEN\", the lives, \"HI\", the high score's spaces and its \"00\"."
+   "text": "The score line under the playfield, 40 characters in the game's alphabet: \"SCORE\", the score's digit spaces and its fixed \"00\", the grenade symbol ($3C) and an equals sign ($3F) before the grenade count's place, \"MEN\", the lives, \"HI\", the high score's spaces and its \"00\"."
   },
   {
    "address": 16616,
@@ -10538,7 +10538,7 @@
   {
    "address": 16807,
    "type": "line",
-   "text": "Raster interrupt at line $1E, the top of the playfield: the fine scroll from $0402, the playfield's colours ($04E2-$04E4), and the first eight slots in the sort order ($4B-$52) placed on hardware sprites 7 down to 0 (y from $04C2, x, block, colour, x-high and behind-scenery bits). Selects the area's character set (area x 2 into $D018: $C000, $C800, $D000 or $D800) and asks for a line 20 below the fourth sorted slot's top."
+   "text": "Raster interrupt at line $1E, the top of the playfield: the fine scroll from $0402, the playfield's colours ($04E2-$04E4), and the first eight slots in the sort order ($4B-$52) placed on hardware sprites 7 down to 0 (y from $04C2, x, block, colour, x-high and behind-scenery bits). Selects the area's character set (area x 2 into the low nibble of $D018: $C000, $C800, $D000 or $D800) and asks for a line 20 below the fourth sorted slot's top."
   },
   {
    "address": 16862,
@@ -10548,7 +10548,7 @@
   {
    "address": 16998,
    "type": "line",
-   "text": "Raster interrupt below the first four sorted sprites: reuses hardware sprites 7-4 for sorted slots 8-11 ($53-$56). Asks for the line two above slot 12's top."
+   "text": "Raster interrupt below the first four sorted sprites: reuses hardware sprites 7-4 for sorted slots 8-11 ($53-$56). Asks for the line two above the top of sorted slot 12 ($57)."
   },
   {
    "address": 17259,
@@ -10603,12 +10603,12 @@
   {
    "address": 17529,
    "type": "line",
-   "text": "86 bytes identical to the end of irq_lower ($43F9-$444E), placing the last two sprites, left behind by an earlier assembly or load. Nothing reaches them."
+   "text": "86 bytes identical to the end of irq_lower ($43F9-$444E), placing the last two sprites; the byte after them, $29 at $44CF, matches $444F too. Nothing reaches them. How they came to be here is unknown, perhaps an earlier assembly or load."
   },
   {
    "address": 17615,
    "type": "line",
-   "text": "Seventeen bytes nothing reads, $0F counting down to $02, then $00 and $FF."
+   "text": "Seventeen bytes nothing reads: $29, which still matches irq_lower ($444F) as the copy before it does, then $0F counting down to $02, then $00 and $FF."
   },
   {
    "address": 17632,
@@ -10623,7 +10623,7 @@
   {
    "address": 17668,
    "type": "line",
-   "text": "Zeroes the SID's 31 registers."
+   "text": "Zeroes the 31 bytes from $D400 to $D41E: every SID register ($D400-$D41C) and the two unused addresses after them."
   },
   {
    "address": 17713,
@@ -10708,7 +10708,7 @@
   {
    "address": 18352,
    "type": "line",
-   "text": "Fades the background through twelve colours from $47D6 + X (X = 0 fades in, 12 out), one a frame after a delay loop of about 4,000 iterations."
+   "text": "Fades the background through twelve colours from $47D6 + X (X = 0 fades in, 12 out), each after a delay loop of 4,096 iterations (about a frame) and a wait until the raster is at line 256 or beyond, so one every frame or two."
   },
   {
    "address": 18390,
@@ -10823,7 +10823,7 @@
   {
    "address": 20633,
    "type": "line",
-   "text": "The track's $FF: back to its start, with the note and pattern positions reset."
+   "text": "The track's $FF: back to its start, with the note counter and pattern position reset."
   },
   {
    "address": 20647,
@@ -10883,7 +10883,7 @@
   {
    "address": 20891,
    "type": "line",
-   "text": "The per-frame effects of the voice's instrument, while the voice is its own. Vibrato (byte 5 non-zero, and only on notes of six ticks or more): the frequency swings up from the note towards the next semitone by a fraction set by byte 5 (the gap halved byte 5 + 1 times), stepping 0, 1, 2, 3, 3, 2, 1, 0 with the frame counter."
+   "text": "The per-frame effects of the voice's instrument, while the voice is its own. Vibrato (byte 5 non-zero, and only on notes of seven ticks or more, length byte bits 0-4 at least 6): the frequency swings up from the note towards the next semitone by a fraction set by byte 5 (the gap halved byte 5 + 1 times), stepping 0, 1, 2, 3, 3, 2, 1, 0 with the frame counter."
   },
   {
    "address": 20940,
@@ -10908,7 +10908,7 @@
   {
    "address": 21040,
    "type": "line",
-   "text": "Pulse width. With effect bit 3, byte 6 is added to the width's low byte every frame. Otherwise, with byte 6 non-zero, a sweep: every (byte 6 AND $1F) + 1 frames the width moves by (byte 6 AND $E0), up until its high byte reaches $0E and down until it reaches $08 ($5510 holds the direction). The width is kept in the instrument itself, so every voice playing it shares the sweep."
+   "text": "Pulse width. With effect bit 3, byte 6 is added to the width's low byte every frame, with whatever carry the vibrato code leaves (so one more on some frames of instruments 8 and 10, which also have vibrato). Otherwise, with byte 6 non-zero, a sweep: every (byte 6 AND $1F) + 1 frames the width moves by (byte 6 AND $E0), up until its high byte reaches $0E and down until it reaches $08 ($5510 holds the direction). The width is kept in the instrument itself, so every voice playing it shares the sweep."
   },
   {
    "address": 21068,
@@ -10953,7 +10953,7 @@
   {
    "address": 21302,
    "type": "line",
-   "text": "Effect bit 1: on notes of three ticks or more the frequency's high byte rises by two every other frame."
+   "text": "Effect bit 1: on notes of four ticks or more (length bits 0-4 at least 3) the frequency's high byte rises by two every other frame."
   },
   {
    "address": 21342,
@@ -10983,7 +10983,7 @@
   {
    "address": 21413,
    "type": "line",
-   "text": "Plays a frame of the sound effect, if one is on. A new request (bit 6 of $5527) is set up first ($5531). Every (byte 0 AND $0F) + 1 frames the effect steps: its note ($5529) moves one semitone towards its end note ($552B), voice 1 sounds that note and voice 2 a note $552C / 2 semitones lower (byte 0's bit 7 leaves both alone, bit 6 voice 1), and either voice's gate can be flipped at each step to retrigger it ($552D bits 7 and 6). At the end note the effect stops ($53CF)."
+   "text": "Plays a frame of the sound effect, if one is on. A new request (bit 6 of $5527) is set up first ($5531). Every (byte 0 AND $0F) + 1 frames the effect steps: voice 1 sounds its note ($5529), which then moves one semitone towards its end note ($552B), and voice 2 the frequency $552C bytes lower in the table, $552C / 2 semitones when $552C is even (effects 0 and 9 have odd values, so voice 2 is given a high byte as its low byte and the next note's low byte as its high) (byte 0's bit 7 leaves both alone, bit 6 voice 1), and either voice's gate can be flipped at each step to retrigger it ($552D bits 7 and 6). When the note has reached the end note the effect stops ($53CF) without sounding it."
   },
   {
    "address": 21428,
@@ -11003,7 +11003,7 @@
   {
    "address": 21470,
    "type": "line",
-   "text": "The effect steps its note one semitone towards the end note (DEC, or INC when rising) and writes it to voice 1."
+   "text": "The effect steps its note one semitone towards the end note (DEC, or INC when rising) and writes the note it had before the step to voice 1."
   },
   {
    "address": 21470,
@@ -11018,12 +11018,12 @@
   {
    "address": 21512,
    "type": "line",
-   "text": "Retriggers voice 1's gate each step when byte 4's bit 7 asks."
+   "text": "Flips voice 1's gate at each step when bit 7 of byte 8 ($552D) asks, so the note restarts every other step."
   },
   {
    "address": 21528,
    "type": "line",
-   "text": "Retriggers voice 2's gate when bit 6 asks."
+   "text": "Flips voice 2's gate at each step when bit 6 asks."
   },
   {
    "address": 21541,
@@ -11038,7 +11038,7 @@
   {
    "address": 21545,
    "type": "line",
-   "text": "Note 0's high byte, $01: the music and the effects read the high bytes as $5429,Y ($5100, $5380, $53F0)."
+   "text": "Note 0's high byte, $01: the music, its vibrato and the effects read the high bytes as $5429,Y ($5100, $51E1, $51F6, $5380, $53F0, $5402)."
   },
   {
    "address": 21546,
@@ -11083,7 +11083,7 @@
   {
    "address": 21752,
    "type": "line",
-   "text": "Each voice's waveform byte, as last written, for the release."
+   "text": "Each voice's waveform byte, its instrument's byte 2 as of the last note read (gate bit included, even for a rest or while an effect has the voice), for the release and the drum."
   },
   {
    "address": 21755,
@@ -11113,7 +11113,7 @@
   {
    "address": 21764,
    "type": "line",
-   "text": "Scratch: the voice number, or the slide or pulse step."
+   "text": "Scratch: the voice number, the slide step, or the tune number times 2 while $5F0C finds the tune's record."
   },
   {
    "address": 21765,
@@ -11193,7 +11193,7 @@
   {
    "address": 21786,
    "type": "line",
-   "text": "Each voice's frequency, high byte, kept for slides and drums."
+   "text": "Each voice's frequency, high byte, kept for slides, drums and the rise."
   },
   {
    "address": 21789,
@@ -11258,7 +11258,7 @@
   {
    "address": 21805,
    "type": "line",
-   "text": "Effect flags: bit 7 retrigger voice 1 each step, bit 6 voice 2."
+   "text": "Effect flags: bit 7 flips voice 1's gate at each step, bit 6 voice 2's."
   },
   {
    "address": 21806,
@@ -11408,7 +11408,7 @@
   {
    "address": 22642,
    "type": "line",
-   "text": "The second voice of tune 1, the high-score tune: 1 patterns, 32 ticks, about 2.6 s at 50 frames a second, then starts again."
+   "text": "The second voice of tune 1, the high-score tune: 1 pattern, 32 ticks, about 2.6 s at 50 frames a second, then starts again."
   },
   {
    "address": 22644,
@@ -11678,7 +11678,7 @@
   {
    "address": 24406,
    "type": "line",
-   "text": "Asks for sound effect A: with effects on, $5527 = A + $40 and full volume, returning A = $0F; with them off, $5527 = $FF and A is returned unchanged. The fall into water keeps that $0F as the death count's start ($3C1A)."
+   "text": "Asks for sound effect A: with effects on, $5527 = A + $40 and full volume, returning A = $0F; with them off, $5527 = $FF and A is returned unchanged. The fall into water or a hole keeps that $0F as the death count's start ($3C1A)."
   },
   {
    "address": 24415,
@@ -11733,7 +11733,7 @@
   {
    "address": 24568,
    "type": "line",
-   "text": "Eight zero bytes before area 0's map."
+   "text": "Eight $20 bytes, screen-code spaces, after the collision question and before area 0's map; the menu copies only the 40 bytes before them ($45E6)."
   },
   {
    "address": 24576,
@@ -11743,37 +11743,37 @@
   {
    "address": 25576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 25-49 ($19-$31), characters of the set at $C000: open ground with sandbag walls, which stop the player and bullets: on the left at rows 25 and 40, in the middle at row 30, on the right at row 46. Spawn-list entries due as these rows reach the top of the screen: row 25, a soldier lying in wait; row 25, a soldier lying in wait; row 30, a soldier lying in wait; row 38, a box of grenades; row 41, a soldier lying in wait; row 46, a soldier lying in wait; row 46, a soldier lying in wait."
+   "text": "Area 0's map (the first area played), rows 25-49 ($19-$31), characters of the set at $C000: open ground with sandbag walls, which stop the player and bullets: on the left at rows 25 and 41, in the middle at row 30, on the right at row 46. Spawn-list entries due as these rows reach the top of the screen: row 25, a soldier lying in wait; row 25, a soldier lying in wait; row 30, a soldier lying in wait; row 38, a box of grenades; row 41, a soldier lying in wait; row 46, a soldier lying in wait; row 46, a soldier lying in wait."
   },
   {
    "address": 26576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 50-74 ($32-$4A), characters of the set at $C000: a last sandbag wall on the left at row 55, then a field of boulders: three in a row at rows 62-65 and one at rows 70-73. Spawn-list entries due as these rows reach the top of the screen: row 52, a box of grenades; row 55, a soldier lying in wait; row 62, a soldier lying in wait; row 62, a soldier lying in wait; row 62, a soldier lying in wait; row 70, a soldier lying in wait; row 74, a soldier lying in wait. Checkpoint row 61: a life lost with the top of the screen at rows 20-61 restarts with this row at the top."
+   "text": "Area 0's map (the first area played), rows 50-74 ($32-$4A), characters of the set at $C000: a last sandbag wall on the left at row 55, then a field of boulders: three in a row at rows 62-64 and one at rows 70-72. Spawn-list entries due as these rows reach the top of the screen: row 52, a box of grenades; row 55, a soldier lying in wait; row 62, a soldier lying in wait; row 62, a soldier lying in wait; row 62, a soldier lying in wait; row 70, a soldier lying in wait; row 74, a soldier lying in wait. Checkpoint row 61: a life lost with the top of the screen at rows 20-61 restarts with this row at the top."
   },
   {
    "address": 27576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 75-99 ($4B-$63), characters of the set at $C000: three more boulders, at rows 75, 80 and 85, then at rows 90-99 a wall across the map (terrain 3: solid, and drawn over the sprites), passable only through the arch at columns 18-21, where the player walks behind it (terrain 2). A palm stands beside the arch. Spawn-list entries due as these rows reach the top of the screen: row 77, a soldier walking in from the left; row 80, a soldier lying in wait; row 83, a soldier lying in wait; row 84, a soldier walking in from the right; row 86, a grenadier who stops to throw; row 87, a soldier walking in from the left; row 91, the motorcycle and sidecar that stops; row 91, a grenadier who stops to throw. Checkpoint row 97: a life lost with the top of the screen at rows 62-97 restarts with this row at the top."
+   "text": "Area 0's map (the first area played), rows 75-99 ($4B-$63), characters of the set at $C000: three more boulders, at rows 74-76, 80-82 and 83-85, then at rows 89-98 a wall across the map (terrain 3, solid and drawn over the sprites, in rows 89-93; terrain 1 below), passable only through the arch at columns 18-21, where the player walks behind it (terrain 2). A palm stands against the wall at its left end, columns 0-4. Spawn-list entries due as these rows reach the top of the screen: row 77, a soldier walking in from the left; row 80, a soldier lying in wait; row 83, a soldier lying in wait; row 84, a soldier walking in from the right; row 86, a grenadier who stops to throw; row 87, a soldier walking in from the left; row 91, the motorcycle and sidecar that stops; row 91, a grenadier who stops to throw. Checkpoint row 97: a life lost with the top of the screen at rows 62-97 restarts with this row at the top."
   },
   {
    "address": 28576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 100-124 ($64-$7C), characters of the set at $C000: palms, a sandbag emplacement at the top right (rows 100-104) where the trench soldier waits, and the top of a grassy outcrop (rows 124-130), whose rock face is a wall. Spawn-list entries due as these rows reach the top of the screen: row 100, a box of grenades; row 102, a soldier in a trench; row 123, a guard; row 123, a guard; row 123, a prisoner."
+   "text": "Area 0's map (the first area played), rows 100-124 ($64-$7C), characters of the set at $C000: palms, a sandbag emplacement at the top right (rows 100-105) where the trench soldier waits, and the top of a grassy outcrop (rows 124-129), whose rock face is a wall. Spawn-list entries due as these rows reach the top of the screen: row 100, a box of grenades; row 102, a soldier in a trench; row 123, a guard; row 123, a guard; row 123, a prisoner."
   },
   {
    "address": 29576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 125-149 ($7D-$95), characters of the set at $C000: two grassy outcrops (rows 124-130 in the middle, 131-138 on the left), a boulder, palms and a sandbag wall at rows 145-147. Spawn-list entries due as these rows reach the top of the screen: row 126, a soldier running in from the left to jump; row 129, a soldier running in from the left to jump; row 132, a soldier running in from the left to jump; row 142, a box of grenades; row 144, a soldier lying in wait. Checkpoint row 131: a life lost with the top of the screen at rows 98-131 restarts with this row at the top."
+   "text": "Area 0's map (the first area played), rows 125-149 ($7D-$95), characters of the set at $C000: two grassy outcrops (rows 124-129 in the middle, 131-138 on the left), a boulder, palms and a sandbag wall at rows 144-146. Spawn-list entries due as these rows reach the top of the screen: row 126, a soldier running in from the left to jump; row 129, a soldier running in from the left to jump; row 132, a soldier running in from the left to jump; row 142, a box of grenades; row 144, a soldier lying in wait. Checkpoint row 131: a life lost with the top of the screen at rows 98-131 restarts with this row at the top."
   },
   {
    "address": 30576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 150-174 ($96-$AE), characters of the set at $C000: clumps of palms (rows 150-154 and 168-173), single palms, and an outcrop on the right at rows 157-162. The area starts here: a new area puts row 165 ($A5) at the top of the screen. Spawn-list entries due as these rows reach the top of the screen: row 152, a soldier running in from the right to jump; row 155, a soldier running in from the right to jump; row 158, a soldier running in from the right to jump."
+   "text": "Area 0's map (the first area played), rows 150-174 ($96-$AE), characters of the set at $C000: clumps of palms (rows 149-155 and 169-175), single palms, and an outcrop on the right at rows 157-162. Spawn-list entries due as these rows reach the top of the screen: row 152, a soldier running in from the right to jump; row 155, a soldier running in from the right to jump; row 158, a soldier running in from the right to jump."
   },
   {
    "address": 31576,
    "type": "line",
-   "text": "Area 0's map (the first area played), rows 175-199 ($AF-$C7), characters of the set at $C000: the bottom: palms and an outcrop on the right (rows 180-184), with clumps of palms along the bottom edge. The area's last checkpoint lies ten rows below where it starts. Checkpoint row 175: a life lost with the top of the screen at rows 132-175 restarts with this row at the top."
+   "text": "Area 0's map (the first area played), rows 175-199 ($AF-$C7), characters of the set at $C000: the bottom: palms and an outcrop on the right (rows 178-182), with clumps of palms along the bottom edge. The area starts here, with row 175 at the top of the screen: a new area parks the map at row 165 and the life's set-up moves it down to this checkpoint ($3DE0). Checkpoint row 175: a life lost with the top of the screen at rows 132-175 restarts with this row at the top."
   },
   {
    "address": 32576,
@@ -11793,7 +11793,7 @@
   {
    "address": 32768,
    "type": "line",
-   "text": "Area 1's map (the second area played), rows 0-24 ($00-$18), characters of the set at $C800: the top. Rows 0-6 are the same wall as area 0's, its gap at columns 15-25 closed and opened by the same gate ($15BC). Below, rock faces line both edges down to row 28, and the left bunker (stamp 0, $14B5) is put back at rows 22-30, columns 0-5, at each life's start ($3DE0 at $8370). Spawn-list entries due as these rows reach the top of the screen: row 1, the gate opening. Checkpoint row 19: a life lost with the top of the screen at rows 0-19 restarts with this row at the top."
+   "text": "Area 1's map (the second area played), rows 0-24 ($00-$18), characters of the set at $C800: the top. Rows 0-6 are the same wall as area 0's, its gap at columns 15-25 closed and opened by the same gate ($15BC). Below, rock faces line the left edge down to row 21 and the right edge down to row 29, and the left bunker (stamp 0, $14B5) is put back at rows 22-30, columns 0-5, at each life's start ($3DE0 at $8370). Spawn-list entries due as these rows reach the top of the screen: row 1, the gate opening. Checkpoint row 19: a life lost with the top of the screen at rows 0-19 restarts with this row at the top."
   },
   {
    "address": 33768,
@@ -11803,7 +11803,7 @@
   {
    "address": 34768,
    "type": "line",
-   "text": "Area 1's map (the second area played), rows 50-74 ($32-$4A), characters of the set at $C800: the third bunker (stamp 0, rows 56-64, columns 0-5, $88C0), then the river at rows 66-75: water the player falls into (terrain 4) right across the map, crossed by a wooden bridge whose deck, columns 8-14, is the one way over. Spawn-list entries due as these rows reach the top of the screen: row 58, a grenadier who stops to throw; row 61, a soldier walking in from the right; row 61, the left bunker's gun; row 70, a foxhole. Checkpoint row 61: a life lost with the top of the screen at rows 20-61 restarts with this row at the top."
+   "text": "Area 1's map (the second area played), rows 50-74 ($32-$4A), characters of the set at $C800: the third bunker (stamp 0, rows 56-64, columns 0-5, $88C0), then the river at rows 66-75: water the player falls into (terrain 4, rows 68-74) right across the map, crossed by a wooden bridge whose deck, columns 8-14, is the one way over. Spawn-list entries due as these rows reach the top of the screen: row 58, a grenadier who stops to throw; row 61, a soldier walking in from the right; row 61, the left bunker's gun; row 70, a foxhole. Checkpoint row 61: a life lost with the top of the screen at rows 20-61 restarts with this row at the top."
   },
   {
    "address": 35768,
@@ -11813,17 +11813,17 @@
   {
    "address": 36768,
    "type": "line",
-   "text": "Area 1's map (the second area played), rows 100-124 ($64-$7C), characters of the set at $C800: a wall right across the map at rows 100-109, passable only through its gap at columns 17-21, behind which the player walks (terrain 2); then the first of the black pits, which are holes the player falls into (terrain 4). Spawn-list entries due as these rows reach the top of the screen: row 104, a grenadier who stops to throw; row 112, a box of grenades; row 116, a foxhole; row 123, a foxhole; row 123, a foxhole; row 123, a foxhole."
+   "text": "Area 1's map (the second area played), rows 100-124 ($64-$7C), characters of the set at $C800: a wall right across the map at rows 101-109, passable only through its gap at columns 17-21, behind which the player walks (terrain 2); then the first of the black pits, which are holes the player falls into (terrain 4). Spawn-list entries due as these rows reach the top of the screen: row 104, a grenadier who stops to throw; row 112, a box of grenades; row 116, a foxhole; row 123, a foxhole; row 123, a foxhole; row 123, a foxhole."
   },
   {
    "address": 37768,
    "type": "line",
-   "text": "Area 1's map (the second area played), rows 125-149 ($7D-$95), characters of the set at $C800: open ground broken by pits on both sides, rows 125-149. Spawn-list entries due as these rows reach the top of the screen: row 131, a foxhole; row 136, a foxhole; row 138, a box of grenades; row 140, a foxhole; row 140, a foxhole; row 147, a foxhole; row 149, a foxhole; row 149, a foxhole. Checkpoint row 131: a life lost with the top of the screen at rows 98-131 restarts with this row at the top."
+   "text": "Area 1's map (the second area played), rows 125-149 ($7D-$95), characters of the set at $C800: open ground, rows 125-149, broken by pits at both sides and one in the middle at rows 139-140. Spawn-list entries due as these rows reach the top of the screen: row 131, a foxhole; row 136, a foxhole; row 138, a box of grenades; row 140, a foxhole; row 140, a foxhole; row 147, a foxhole; row 149, a foxhole; row 149, a foxhole. Checkpoint row 131: a life lost with the top of the screen at rows 98-131 restarts with this row at the top."
   },
   {
    "address": 38768,
    "type": "line",
-   "text": "Area 1's map (the second area played), rows 150-174 ($96-$AE), characters of the set at $C800: the last two pits, at rows 154-156 and 158-160, then open ground. The area starts here, row 165 ($A5) at the top of the screen. Spawn-list entries due as these rows reach the top of the screen: row 150, a motorcycle and sidecar crossing; row 155, a foxhole; row 155, the purple vehicle crossing; row 157, a foxhole; row 162, a box of grenades; row 165, a jeep. Checkpoint row 166: a life lost with the top of the screen at rows 132-166 restarts with this row at the top."
+   "text": "Area 1's map (the second area played), rows 150-174 ($96-$AE), characters of the set at $C800: the last two pits, at rows 154-155 and 158-159, then open ground. The area starts here, with row 166 at the top of the screen: the checkpoint below row 165, where a new area parks the map ($3DE0). Spawn-list entries due as these rows reach the top of the screen: row 150, a motorcycle and sidecar crossing; row 155, a foxhole; row 155, the purple vehicle crossing; row 157, a foxhole; row 162, a box of grenades; row 165, a jeep. Checkpoint row 166: a life lost with the top of the screen at rows 132-166 restarts with this row at the top."
   },
   {
    "address": 39768,
@@ -11838,27 +11838,27 @@
   {
    "address": 40960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 0-24 ($00-$18), characters of the set at $D800: the top: the fortress. Its walls fill rows 0-12, with the black doorway at columns 15-25 open (terrain 0); the twenty soldiers of the top come out of it (from y $64, $2CBB), and when they are gone the player walks up into it to finish the game ($3A2E). Below it, open ground. Spawn-list entries due as these rows reach the top of the screen: row 2, a soldier lying in wait; row 2, a soldier lying in wait; row 10, a soldier lying in wait; row 10, a soldier lying in wait; row 22, a bomb thrower from the right; row 24, a bomb thrower from the right. Checkpoint row 19: a life lost with the top of the screen at rows 0-19 restarts with this row at the top."
+   "text": "Area 3's map (the third area played), rows 0-24 ($00-$18), characters of the set at $D800: the top: the fortress. Its walls fill rows 0-12, with the black doorway at columns 15-25, whose inside (columns 16-24, rows 6-11) the sprites pass behind (terrain 2); the twenty soldiers of the top come out of it (from y $64, $2CBB), and when they are gone the player walks up into it to finish the game ($3A2E). Below it, open ground. Spawn-list entries due as these rows reach the top of the screen: row 2, a soldier lying in wait; row 2, a soldier lying in wait; row 10, a soldier lying in wait; row 10, a soldier lying in wait; row 22, a bomb thrower from the right; row 24, a bomb thrower from the right. Checkpoint row 19: a life lost with the top of the screen at rows 0-19 restarts with this row at the top."
   },
   {
    "address": 41960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 25-49 ($19-$31), characters of the set at $D800: open ground, and a clump of palms at the left edge from row 43. Spawn-list entries due as these rows reach the top of the screen: row 28, a box of grenades; row 30, a bomb thrower from the left; row 36, a bomb thrower from the left; row 38, a bomb thrower from the left."
+   "text": "Area 3's map (the third area played), rows 25-49 ($19-$31), characters of the set at $D800: open ground, and a clump of palms at the left edge from row 42. Spawn-list entries due as these rows reach the top of the screen: row 28, a box of grenades; row 30, a bomb thrower from the left; row 36, a bomb thrower from the left; row 38, a bomb thrower from the left."
   },
   {
    "address": 42960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 50-74 ($32-$4A), characters of the set at $D800: the palms at the left, a watchtower at the right edge (rows 62-71), and from row 65 the start of the airstrip, a grey road with dashes crossing the map diagonally, down to the right. Spawn-list entries due as these rows reach the top of the screen: row 58, a bomb thrower from the right; row 59, a bomb thrower from the left; row 62, a bomb thrower from the right; row 67, a sniper. Checkpoint row 61: a life lost with the top of the screen at rows 20-61 restarts with this row at the top."
+   "text": "Area 3's map (the third area played), rows 50-74 ($32-$4A), characters of the set at $D800: the palms at the left, a watchtower at the right edge (rows 62-73), and from row 64 the start of the airstrip, a grey road with dashes crossing the map diagonally, down to the right. Spawn-list entries due as these rows reach the top of the screen: row 58, a bomb thrower from the right; row 59, a bomb thrower from the left; row 62, a bomb thrower from the right; row 67, a sniper. Checkpoint row 61: a life lost with the top of the screen at rows 20-61 restarts with this row at the top."
   },
   {
    "address": 43960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 75-99 ($4B-$63), characters of the set at $D800: the airstrip across the middle of the map, with ground and palms in the corner at bottom left (rows 85-99). Spawn-list entries due as these rows reach the top of the screen: row 76, a box of grenades; row 78, a bomb thrower from the left; row 80, a bomb thrower from the left; row 83, a bomb thrower from the right; row 88, a lorry; row 93, a lorry; row 96, a bomb thrower from the left; row 97, a motorcycle and sidecar crossing. Checkpoint row 97: a life lost with the top of the screen at rows 62-97 restarts with this row at the top."
+   "text": "Area 3's map (the third area played), rows 75-99 ($4B-$63), characters of the set at $D800: the airstrip across the middle of the map, with ground and palms in the corner at bottom left (rows 84-99). Spawn-list entries due as these rows reach the top of the screen: row 76, a box of grenades; row 78, a bomb thrower from the left; row 80, a bomb thrower from the left; row 83, a bomb thrower from the right; row 88, a lorry; row 93, a lorry; row 96, a bomb thrower from the left; row 97, a motorcycle and sidecar crossing. Checkpoint row 97: a life lost with the top of the screen at rows 62-97 restarts with this row at the top."
   },
   {
    "address": 44960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 100-124 ($64-$7C), characters of the set at $D800: the airstrip, a patch of ground with a palm above it at the right (rows 100-114), and the wing of a camouflaged aircraft at the right edge (rows 119-127). Spawn-list entries due as these rows reach the top of the screen: row 115, a bomb thrower from the left; row 116, a bomb thrower from the right; row 119, a motorcycle and sidecar crossing."
+   "text": "Area 3's map (the third area played), rows 100-124 ($64-$7C), characters of the set at $D800: the airstrip, a patch of ground with a palm on it at the right (rows 99-116), and the wing of a camouflaged aircraft at the right edge (rows 118-125). Spawn-list entries due as these rows reach the top of the screen: row 115, a bomb thrower from the left; row 116, a bomb thrower from the right; row 119, a motorcycle and sidecar crossing."
   },
   {
    "address": 45960,
@@ -11868,12 +11868,12 @@
   {
    "address": 46960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 150-174 ($96-$AE), characters of the set at $D800: trenches: three bands across the map (rows 152-160, 169-178 and 186-195), each a hole the player falls into (terrain 4), crossed only at its grey gate, 13 columns wide: columns 1-13 in the first band, 15-27 in the second. The area starts here, row 165 ($A5) at the top of the screen. Spawn-list entries due as these rows reach the top of the screen: row 163, a bomb thrower from the left; row 164, a bomb thrower from the left. Checkpoint row 166: a life lost with the top of the screen at rows 132-166 restarts with this row at the top."
+   "text": "Area 3's map (the third area played), rows 150-174 ($96-$AE), characters of the set at $D800: trenches: three bands across the map (rows 152-160, 169-178 and 186-195), each a hole the player falls into (terrain 4), crossed only at its grey gate, 13 columns wide: columns 1-13 in the first band, 15-27 in the second. The area starts here, with row 166 at the top of the screen: the checkpoint below row 165, where a new area parks the map ($3DE0). Spawn-list entries due as these rows reach the top of the screen: row 163, a bomb thrower from the left; row 164, a bomb thrower from the left. Checkpoint row 166: a life lost with the top of the screen at rows 132-166 restarts with this row at the top."
   },
   {
    "address": 47960,
    "type": "line",
-   "text": "Area 3's map (the third area played), rows 175-199 ($AF-$C7), characters of the set at $D800: the bottom: the third band of trenches, its gate at columns 21-33, and open ground below it. Spawn-list entries due as these rows reach the top of the screen: row 179, a bomb thrower from the right; row 180, a bomb thrower from the left."
+   "text": "Area 3's map (the third area played), rows 175-199 ($AF-$C7), characters of the set at $D800: the bottom: the third band of trenches, its gate at columns 21-33, and open ground below it. Spawn-list entries placed as soon as a life starts at row 166, since they lie on its first screen ($109B): row 179, a bomb thrower from the right; row 180, a bomb thrower from the left."
   },
   {
    "address": 48960,
@@ -11883,27 +11883,27 @@
   {
    "address": 49152,
    "type": "line",
-   "text": "Area 0's character set (the first area played; $D018 = 0 at the raster split $41A7), glyphs 0-127 of 256, multicolour: pieces of the jungle that the map at $6000 puts together into ground, stones, sandbags, boulders, the wall with its arch, palms and grassy outcrops. The map uses 116 of these 128 glyphs; the area's terrain table ($178B) makes 84 of them walls and 28 scenery the sprites pass behind."
+   "text": "Area 0's character set (the first area played; $D018 = $80: the raster split $41A7 puts area x 2 in its low nibble), glyphs 0-127 of 256, multicolour: pieces of the jungle that the map at $6000 puts together into ground, stones, sandbags, boulders, the wall with its arch, palms and grassy outcrops. The map and the gate's pictures use 116 of these 128 glyphs. The area's terrain table ($178B) classes 84 of the 128 as walls and 28 as scenery the sprites pass behind."
   },
   {
    "address": 50176,
    "type": "line",
-   "text": "Area 0's character set, glyphs 128-255: more of the jungle's pieces. The map uses 109 of them; the terrain table makes 79 walls and 39 scenery the sprites pass behind."
+   "text": "Area 0's character set, glyphs 128-255: more of the jungle's pieces. The map and the gate's pictures use 109 of them. The terrain table classes 79 of the 128 as walls and 39 as scenery the sprites pass behind."
   },
   {
    "address": 51200,
    "type": "line",
-   "text": "Area 1's character set (the second area played, $D018 = 2), glyphs 0-127, multicolour: the pieces of the map at $8000 and of the bunker stamps ($14E4-$15BB): rock faces, the river and its bridge, the hangar, the wall with its gap and the black pits. The map uses 109 of them; its terrain table ($188B) makes 39 walls, 7 scenery the sprites pass behind and 20 water or holes the player falls into."
+   "text": "Area 1's character set (the second area played, $D018 = $82), glyphs 0-127, multicolour: the pieces of the map at $8000 and of the bunker stamps ($14E4-$15BB): the river and its bridge, the hangar, the wall with its gap and the black pits; the rock faces are drawn from glyphs 128-255. The map, the gate's pictures and the stamps use 109 of them. Its terrain table ($188B) classes 39 of the 128 as walls, 7 as scenery the sprites pass behind and 20 as water or holes the player falls into."
   },
   {
    "address": 52224,
    "type": "line",
-   "text": "Area 1's character set, glyphs 128-255. The map and stamps use 110 of them; the terrain table makes 93 walls and 8 scenery the sprites pass behind, and none of them water."
+   "text": "Area 1's character set, glyphs 128-255. The map, the gate's pictures and the stamps use 110 of them. The terrain table classes 93 of the 128 as walls and 8 as scenery the sprites pass behind, and none as water."
   },
   {
    "address": 53248,
    "type": "line",
-   "text": "The character set at $D000 (area counter 2, $D018 = 4), in the RAM under the I/O area, which the VIC reads whatever the processor port says. The game shows it for all its text: the title's credits, the messages between areas, the name entry and the score lines under the playfield (raster interrupt $4119). Glyphs 0-7 here; space is $20, the digits 0-9 are $21-$2A, the score line's grenade and equals sign $3C and $3F, the letters A-Z $5B-$74 and the name entry's marks and END $75-$78. Glyphs 8-15 ($D040-$D07F) are blank as loaded and become sprite block $41, the name entry's gunsight ($0A57)."
+   "text": "The character set at $D000 (area counter 2, $D018 = $84), in the RAM under the I/O area, which the VIC reads whatever the processor port says. The game shows it for all its text: the title's credits, the messages between areas, the name entry and the score lines under the playfield (raster interrupt $4119). Glyphs 0-7 here; space is $20, the digits 0-9 are $21-$2A, the score line's grenade and equals sign $3C and $3F, the letters A-Z $5B-$74 and the name entry's marks and END $75-$78. Glyphs 8-15 ($D040-$D07F) are blank as loaded and become sprite block $41, the name entry's gunsight ($0A57)."
   },
   {
    "address": 53376,
@@ -11913,12 +11913,12 @@
   {
    "address": 54272,
    "type": "line",
-   "text": "The text character set, glyphs 128-255: scenery pieces in the style of area 1's, and shapes like a second alphabet at $80-$9A that none of the game's texts uses. With area 2 never played, nothing here reaches the screen."
+   "text": "The text character set, glyphs 128-255. $80-$96 finish a second drawing of the letters A-Z and of the name entry's marks $75 and $76, which starts at $7B: the name entry's flash shows it by adding $20 to the letter shot ($0ABE). $97 and $98, where second drawings of the rub-out and END would fall, hold other pieces; a shot rub-out never flashes ($0D77). The rest are scenery pieces in the style of area 1's, which no screen shows, since area 2 is never played."
   },
   {
    "address": 55296,
    "type": "line",
-   "text": "Area 3's character set (the third area played, $D018 = 6), in the RAM under the colour RAM and CIAs, glyphs 0-127, multicolour: pieces of the map at $A000, the fortress, palms, the watchtower, the airstrip, the aircraft and the trenches with their gates. The map uses 111 of them; the terrain table ($1A8B) makes 42 walls, 18 scenery the sprites pass behind and 28 trench or hole the player falls into."
+   "text": "Area 3's character set (the third area played, $D018 = $86), in the RAM under the colour RAM and CIAs, glyphs 0-127, multicolour: pieces of the map at $A000, the fortress, palms, the watchtower, the airstrip, the aircraft and the trenches with their gates. The map uses 111 of them. The terrain table ($1A8B) classes 42 of the 128 as walls, 18 as scenery the sprites pass behind and 28 as trench or hole the player falls into."
   },
   {
    "address": 55336,
@@ -11928,12 +11928,12 @@
   {
    "address": 55376,
    "type": "line",
-   "text": "With I/O in, colour RAM from row 2, which REMEMBER's menu colours light grey along that row ($455D). Beneath, area 3's glyphs 10-31: more pieces of the palms (scenery, rows 45-150) and the walls $1A and $1B among them, and ground pieces used where the airstrip crosses the map (rows 64-142); $18 and $1D are not on the map."
+   "text": "With I/O in, colour RAM from row 2, which REMEMBER's menu colours light grey along that row ($455D). Beneath, area 3's glyphs 10-31: more pieces of the palms (scenery, rows 45-150) and the walls $1A and $1B among them, and ground pieces, most of them on the airstrip's edges (rows 64-142) and two, $13 and $1E, scattered over the whole map; $18 and $1D are not on the map."
   },
   {
    "address": 55552,
    "type": "line",
-   "text": "With I/O in, colour RAM from row 6, column 16, which REMEMBER's instructions viewer blacks out ($472F). Beneath, area 3's glyphs 32-51, nearly all ground: $30, the plain ground, used 3,414 times; pieces along the airstrip (rows 74-127) and beside the trenches (rows 152-195); and $20, a wall at the right edge of rows 58-61."
+   "text": "With I/O in, colour RAM from row 6, column 16, which REMEMBER's instructions viewer blacks out ($472F). Beneath, area 3's glyphs 32-51: $30, the plain ground, used 3,414 times, with the ground pieces $32 and $33; the airstrip's dashes ($21, $22, $24, rows 74-127); pieces of the trenches' grey gates ($23, $27-$2D, $2F, rows 152-195), with $25 and $26, which also frame the fortress's doorway; and $20, a wall at the right edge of rows 58-61."
   },
   {
    "address": 55706,
@@ -11953,22 +11953,22 @@
   {
    "address": 56064,
    "type": "line",
-   "text": "With I/O in, colour RAM from row 19, column 8, blacked out by the instructions viewer ($4735). Beneath, area 3's glyphs 96-104: the rest of the sandbag wall at rows 140-141 ($61-$67) and $68, a ground piece the map uses 2,023 times between rows 2 and 177."
+   "text": "With I/O in, colour RAM from row 19, column 8, blacked out by the instructions viewer ($4735). Beneath, area 3's glyphs 96-104: the rest of the sandbag wall at rows 140-141 ($61-$67) and $68, solid grey, which the map uses 2,023 times between rows 2 and 177: the airstrip's surface and the grey of the fortress's corners, the watchtower's roof and the trenches' gates."
   },
   {
    "address": 56136,
    "type": "line",
-   "text": "With I/O in, colour RAM row 21, the score line's: white at each area's start ($403F) and each redraw of the line ($4089). Beneath, area 3's glyphs 105-114: $69, ground beside the trenches, the trench pieces $6A-$6D, and the first walls of the aircraft's wing at the right edge (rows 118-119, $6E-$72)."
+   "text": "With I/O in, colour RAM row 21, the score line's: white at each life's start and on the title ($403F) and at each redraw of the line ($4089). Beneath, area 3's glyphs 105-114: $69, the black-lined crossbar of the trenches' grey gates (rows 155, 173 and 190), the trench pieces $6A-$6D, and the first walls of the aircraft's wing at the right edge (rows 118-119, $6E-$72)."
   },
   {
    "address": 56216,
    "type": "line",
-   "text": "With I/O in, colour RAM row 23, under the score line: white at an area's start ($4042), black at each redraw of the line ($4093). Beneath, area 3's glyphs 115-127: the rest of the aircraft's wing (rows 119-122, columns 35-39), and $79 and $7E, which the map never uses."
+   "text": "With I/O in, colour RAM row 23, under the score line: white at each life's start and on the title ($4042), black at each redraw of the line ($4093). Beneath, area 3's glyphs 115-127: the rest of the aircraft's wing (rows 119-122, columns 35-39), and $79 and $7E, which the map never uses."
   },
   {
    "address": 56320,
    "type": "line",
-   "text": "Area 3's character set, glyphs 128-255. The map uses 99 of them; the terrain table makes 98 walls, 21 scenery the sprites pass behind and 3 holes."
+   "text": "Area 3's character set, glyphs 128-255. The map uses 99 of them. The terrain table classes 98 of the 128 as walls, 21 as scenery the sprites pass behind and 3 as holes."
   },
   {
    "address": 58368,
@@ -11993,7 +11993,7 @@
   {
    "address": 60160,
    "type": "line",
-   "text": "Sprite block $AC, the last of the seven letters of the title's COMMANDO logo ($0FFA), and $AD-$AF, the explosion of a grenade, bomb or shell, from $AF at its largest ($37AC)."
+   "text": "Sprite block $AC, the last of the seven sprites that make up the title's COMMANDO logo, the right-hand end of its last O ($0FFA), and $AD-$AF, the explosion of a grenade, bomb or shell, shown $AF, $AE, $AD, $AF ($37AC): $AF the smallest, $AE scattered pieces, $AD the largest."
   },
   {
    "address": 60416,
@@ -12013,7 +12013,7 @@
   {
    "address": 61952,
    "type": "line",
-   "text": "Sprite blocks $C8-$CF: a soldier lying in wait, facing down ($C8, also the foxhole's soldier standing up), down and to the right ($C9) and down and to the left ($CA) ($2FEE); $CB and $CC, a figure sinking out of sight, used for a soldier shot in his foxhole and for the player falling into water or a hole; $CD-$CF, the soldier in a trench and his recoil as the mortar fires."
+   "text": "Sprite blocks $C8-$CF: a soldier lying in wait, facing down ($C8, also the foxhole's soldier standing up), down and to the right ($C9) and down and to the left ($CA) ($2FEE); $CB and $CC, a figure sinking out of sight, used for a soldier shot lying in wait or in his foxhole (behaviour 29) and for the player falling into water or a hole; $CD-$CF, the soldier in a trench and his recoil as the mortar fires."
   },
   {
    "address": 62464,
@@ -12033,7 +12033,7 @@
   {
    "address": 64816,
    "type": "line",
-   "text": "With the KERNAL in, its table of default vectors, which REMEMBER's menu copies to $0314-$0333 ($4546). In the RAM beneath, sprite blocks from the middle of $F4 to $FE: the rest of the first door soldiers come out of ($F4) and the second ($F5), the first six letters of the COMMANDO logo ($F6-$FB), the bunker guns aimed down and right ($FC) and down and left ($FD), and $FE, a near copy of the logo's $AC that no code shows."
+   "text": "With the KERNAL in, its table of default vectors, which REMEMBER's menu copies to $0314-$0333 ($4546). In the RAM beneath, sprite blocks from the middle of $F4 to $FE: the rest of the first door soldiers come out of ($F4) and the second ($F5), the first six of the seven sprites of the COMMANDO logo ($F6-$FB), the bunker guns aimed down and right ($FC) and down and left ($FD), and $FE, a near copy of the logo's $AC that no code shows."
   },
   {
    "address": 65466,

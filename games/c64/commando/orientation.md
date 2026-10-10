@@ -1,39 +1,66 @@
 # Commando — orientation
 
+How to get from the contributor's own copy to the analysed state. Someone
+else must be able to follow this exactly.
+
 ## The image
 
-`work/Commando.d64` is a 35-track D64 (174,848 bytes). Its directory is `0 "once upon a time" -rem-` and contains two PRG files:
+`work/Commando.d64`, a 35-track D64 of 174,848 bytes, the contributor's
+own copy. Its header reads `once upon a time` with the ID `-rem-`, and it
+holds two files:
 
-| Directory entry | Blocks | Observed purpose |
+| File | Blocks | What it is |
 |---|---:|---|
-| `COMMANDO+5HI/REM` | 120 | REMEMBER crack release, with manual, high-score menu, and up to five trainer options. This is the game's packed program. |
-| `COMMANDO HI /REM` | 1 | 93-byte PRG including its two-byte load address; 91 payload bytes at `$0EED-$0F47` match the gameplay snapshot and the save routine writes that same range as the high-score file. |
+| `COMMANDO+5HI/REM` | 120 | REMEMBER's packed release: the 1985 game with the crack's instructions, menu, trainer and high-score saver |
+| `COMMANDO HI /REM` | 1 | the saved high-score table: a load address and 91 bytes for `$0EED-$0F47` |
 
-The image is a cracked/trainer release, not an unmodified retail image. No trainer option was chosen. `c1541` extracted working copies to `work/trainer.prg` and `work/game.prg`; these are ignored working files and must not be committed.
+This is not the original release. It is REMEMBER's "Commando +5HD"
+(CSDb release 40672, June 1997). What the crack added or changed is in
+`facts.md`, "REMEMBER's changes".
 
 ## From power-on to play
 
-1. Start VICE through `python3 kit/scripts/tools.py vice`. Attach `work/Commando.d64` to unit 8 and hard-reset before autostarting directory file 1 (`COMMANDO+5HI/REM`). VICE's direct image autostart of the one-block auxiliary file only returned to BASIC READY.
-2. Wait about 25 seconds for the REMEMBER crack screen. Press Space to read the built-in manual. Press Escape (the VICE Run/Stop key) to leave the manual. At `Highscore or Trainer?`, press `H`; at `Load or Restart Highscore?`, press `R` to reset the score list and continue without selecting trainer options.
-3. Wait about 30 seconds for the Commando title screen. Press joystick fire on port 2; wait for the battlefield. This was confirmed in VICE by a screenshot with Super Joe and the score/lives HUD.
-4. Save without ROMs as `work/play.vsf`. The captured snapshot is live gameplay. The initial capture recorded PC `$3FEF`, `$01=$36`, RAM IRQ vector `$0314/$0315=$4116`, and NMI vector `$0316/$0317=$FE66` (KERNAL). A second known address corroborates the IRQ path: `$4116` jumps through `$0406-$0407`, whose gameplay value points to `$41A7`. Tracing the code writes maps the raster chain `$416A → $41A7 → $4266 → $436B → $4119 → $416A`; the active raster handler is selected through `$0406-$0407`. VICE was configured as PAL C64SC with 64 KB RAM, VIC-II 6569, SID 6581, and CIA 6526s.
+1. Start VICE with `python3 kit/scripts/tools.py vice`, hard-reset, and
+   autostart file 1 of the disk (`autostart` in `kit/c64/vice.py` with the
+   file number 1). File 2 is data: autostarted, it stops at READY.
+2. After about 30 seconds REMEMBER's screens are up. Press Space, wait a
+   few seconds, then press RUN/STOP, which leaves the crack's instructions
+   for its menu: T for the trainer, H for the high scores. Press H.
+3. The menu asks L (load the saved table) or R (keep the table in memory
+   and save it over the file). Press L. The drive loads `COMMANDO HI /REM`
+   to `$0EED` and the game starts at `$0850`.
+4. An execution checkpoint at `$0850`, armed before L, stops the machine
+   at the game's entry. Saved without ROMs, that is `work/entry.vsf`, the
+   snapshot the listing is built from (`work/scripts/to_entry.py`).
+5. The COMMANDO title follows; fire on joystick port 2 starts a game.
+   From `entry.vsf`, 300 frames and a press of fire reach the first area
+   (`work/scripts/live.py`). `work/title.vsf` and `work/play.vsf` were
+   saved on that route, at the title and in the first area.
 
-Rebuild the captured state with:
-
-```text
-python3 kit/scripts/tools.py vice
-# attach games/c64/commando/work/Commando.d64 to unit 8
-# hard reset, autostart file 1, then follow steps 2–4 above
-```
+Choosing T at step 2 asks five yes-or-no questions before step 3 and
+patches the game (`facts.md`); no listing snapshot was taken that way.
 
 ## Steady state
 
-The gameplay snapshot is `work/play.vsf`; it was captured without ROMs or embedded disks. The CPU port value is `$36`. The IRQ vector in RAM points to `$4116`; the NMI vector still points into KERNAL ROM at `$FE66`. `$4116` dispatches through the current raster-handler pointer in `$0406-$0407`. The traced handler chain sets raster compare `$D012` for the next split and replaces this pointer at each stage. Whether levels reload data has not been checked.
+In play the processor port reads `$36` (BASIC banked out, KERNAL and I/O
+in). The IRQ vector at `$0314` points at `$4116`, which jumps through the
+handler pointer at `$0406`; each raster handler sets the next (`$4119`,
+`$416A`, `$41A7`, `$4266`, `$436B`). CIA 1's timer is stopped, so the
+KERNAL's interrupt does not run. The NMI vector points at an RTI at
+`$0A4D`. The VIC-II reads bank 3 (`$C000-$FFFF`), the screen is at
+`$E000`, and the character set changes with the area (`$D018`).
 
-`work/frame.json` records a full PAL frame. CIA2 port A `$C4` selects VIC bank `$C000`; the VIC screen matrix is at `$E000`. `$D018` changes from `$81` to `$85` at raster line 216, switching the character source from `$C000` to `$D000` for the lower raster band. The site's frame renderer matched the emulator's screenshot on all 104,448 pixels.
+The whole game is in memory at `$0850`: code, three maps, four character
+sets, the sprites and the music. Nothing is loaded during play; the disk is
+used only by REMEMBER's code, to load and save the high scores.
 
-The snapshot names a stable gameplay screen with the player, terrain, and HUD visible. The screen was observed moving from the title to play after fire on joystick port 2; no complete frame-chain trace or entry snapshot has been captured yet.
+Three recorded runs of the code map (`kit/c64/codemap.py`, kept as
+`codemap.json`) cover the title, play through every area with the
+trainer's area skip, game overs, the name entry and the save.
 
 ## The loader, in a paragraph
 
-VICE loads the first disk PRG at `$0801`. It shows a REMEMBER crack screen and a built-in manual before offering a high-score/trainer choice. Choosing the high-score path and restarting its score list leads to the Commando title screen; port-2 fire starts play. The second PRG contains 91 data bytes after its two-byte load address. All 91 match `$0EED-$0F47` in the gameplay snapshot. The routine at `$44E0` saves that exact range as `@S:COMMANDO HI /REM`, identifying the file as high-score data. A 16-byte-window search did not establish a contiguous memory mapping for the packed trainer payload in the gameplay snapshot; its unpacking and transfer-of-control sequence still needs tracing from a hand-over snapshot.
+The program on disk is REMEMBER's packed file. It depacks itself, shows
+the crack's instructions and menu, and hands over to the game at `$0850`
+from the menu or, after a name has been entered and the table saved, from
+the saver at `$44E0`. The depacker was not traced.
