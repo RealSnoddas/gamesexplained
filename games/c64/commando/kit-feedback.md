@@ -25,7 +25,7 @@
 
 ## Maintainer asks
 
-- #318: this run is another data point: a first sample of 17 % led to a full audit, which changed 137 of 897 comments (15 %).
+- #318: this run is another data point: a first sample of 17 % led to a full audit, which changed 137 of 897 comments (15 %), and a second sample then found 1 of 70 wrong (1.4 %).
 - **coverage.py: say why each run in the work queue is still bare.** Most of the time this run spent getting from 52.8 % to 100 % went on working out why a stretch next to a commented symbol did not count: an auto symbol inside a table that needed its own comment, a data symbol's 64-byte reach, a span cut at a fixed memory-map edge. The work queue prints the address, the size, the kind and the nearest symbol. A column naming the reason (no comment on the symbol that owns it, beyond its reach, cut at an edge) would point at the fix. It goes in `kit/scripts/coverage.py`, beside the queue; from Commando (C64), 10 October 2026, branch `game/c64/commando`.
 
 ## What cost the most time

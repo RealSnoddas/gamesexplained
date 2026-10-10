@@ -106,8 +106,8 @@ codes (`$4660`, `$46D8`, `$4800`, `$5F80-$5FFF`, `$7F60`).
   (`$178B`, `$188B`, `$1A8B`): bit 0 a wall, which stops the player, turns
   soldiers aside and stops bullets; bit 1 scenery the sprites pass behind;
   bit 2 water, a pit or a trench, which the player falls into.
-- **Sprites.** Sixteen slots share the eight hardware sprites. Each frame
-  `$3F06` sorts the slots by y (a Shell sort, gaps 7, 3 and 1, over
+- **Sprites.** Sixteen slots share the eight hardware sprites. On each pass
+  of the game logic (`$08F7`) `$3F06` sorts the slots by y (a Shell sort, gaps 7, 3 and 1, over
   `$4B-$5A`), and a chain of raster interrupts places them: `$41A7` at line
   `$1E` puts the first eight on sprites 7-0, `$4266` reuses sprites 7-4 for
   sorted slots 8-11 below the fourth, and `$436B` reuses sprites 3-0 for
@@ -136,8 +136,8 @@ his bullets fly in the facing, so a reversal takes a few frames to come
 round.
 
 **The gun.** Each press of fire gives two bullets (`$39C3`): a counter
-(`$04DF`) set to `$FF` while fire is up counts once a frame for each empty
-shot slot, and a bullet goes when it reaches 0 and again at 8, where it
+(`$04DF`) set to `$FF` while fire is up counts, on each pass of the game logic
+(`$08F7`), once for each empty shot slot, and a bullet goes when it reaches 0 and again at 8, where it
 stops: two frames after the first with all four shot slots empty, three
 with three. *Live:* four presses held for 40 frames each made two bullets each.
 A bullet lives 15 frames, at up to eight pixels a frame across and six up
@@ -345,9 +345,24 @@ and its read-back registers, and CIA 2 apart from the VIC bank.
 CSDb credits the crack with a bug fix. Which bytes it changed is unknown:
 no copy of the 1985 release has been compared.
 
-## Comment accuracy
+## The listing's error rate
 
-To be measured.
+Two random samples, each checked against the bytes by an agent that wrote
+none of the comments. The first (seed 20261010) drew 60 of the 837
+comments written by hand and 10 of the 24 on map data, and found 12 wrong,
+17.1 % (Wilson 95 % interval 10.1-27.6 %): a frame count given for a
+random chance and for a pass of the game logic, a caller list too broad,
+one sprite block taken for another, `$D018`'s low nibble given as the
+register, two counts off by one frame, and four map descriptions with a
+row or a terrain class wrong. Those twelve were corrected, and four further agents
+audited every comment in four disjoint ranges and corrected 137 of 897
+(15.3 %), with the same kinds of error. The second sample (seed 20261011),
+drawn after the audit from 868 comments by hand and 29 on map data, took
+60 and 10 and found 1 wrong, 1.4 % (Wilson 95 % interval 0.3-7.7 %; 1.6 %
+weighted by the strata's sizes): `$2495` said the enemies run every frame,
+where they run on every pass of the game logic, which misses the frame on
+which the map moves a whole row. That comment and fifteen others making
+the same claim about routines the logic pass calls were corrected.
 
 ## Live tests
 

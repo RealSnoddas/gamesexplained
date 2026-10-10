@@ -2,7 +2,7 @@
  "schema": 1,
  "platform": "c64",
  "game": "commando",
- "build": "REMEMBER Commando 100% +5 crack/high-score-saver release in the contributor-supplied D64; retail provenance unverified.",
+ "build": "REMEMBER's crack \"Commando +5HD\" (CSDb release 40672, June 1997): a D64 headed \"once upon a time\", ID \"-rem-\", with the packed game and a saved high-score file. The 1985 release was not available to compare.",
  "source": "regenerator2000 live",
  "regions": {
   "exclude": [
@@ -8078,7 +8078,7 @@
   {
    "address": 1207,
    "type": "line",
-   "text": "One byte for each enemy: its timer, counted up each frame by most behaviours, whose low bits decide when it fires, throws or turns."
+   "text": "One byte for each enemy: its timer, counted up on every pass of the game logic by most behaviours, whose low bits decide when it fires, throws or turns."
   },
   {
    "address": 1218,
@@ -8088,7 +8088,7 @@
   {
    "address": 1247,
    "type": "line",
-   "text": "The fire button's repeat count, $FF while fire is up ($3A2A). While fire is held, each empty shot slot adds one a frame ($39E0) and a bullet goes when the count's low three bits come round to zero: the first at once, the second at 8, after which nothing until fire is let go ($39D9)."
+   "text": "The fire button's repeat count, $FF while fire is up ($3A2A). While fire is held, each empty shot slot adds one on each pass of the game logic ($39E0) and a bullet goes when the count's low three bits come round to zero: the first at once, the second at 8, after which nothing until fire is let go ($39D9)."
   },
   {
    "address": 1248,
@@ -8183,7 +8183,7 @@
   {
    "address": 1268,
    "type": "line",
-   "text": "The gate soldiers on the screen, counted afresh each frame: zeroed before the enemies run ($2497), one added by each gate soldier's behaviour ($31D2) and by each one sent out ($2D02, $2D5D). The area is won when it and $04EF are both zero ($3A91)."
+   "text": "The gate soldiers on the screen, counted afresh on every pass of the game logic: zeroed before the enemies run ($2497), one added by each gate soldier's behaviour ($31D2) and by each one sent out ($2D02, $2D5D). The area is won when it and $04EF are both zero ($3A91)."
   },
   {
    "address": 1269,
@@ -8353,7 +8353,7 @@
   {
    "address": 2387,
    "type": "line",
-   "text": "Runs every frame while the player is dying, counting $04E6 up to $50, when a life goes. $0503 = 2 means he fell into a hole or the water: the count starts at $0F there (A as the sound call leaves it, $3C1A), so he shows sprite $CB for four frames, then $CC, 65 frames in all. Otherwise he was hit: the count starts at 1, so he shows $DD until it reaches $14, then $B8, 79 frames in all."
+   "text": "Runs on every pass of the game logic while the player is dying, counting $04E6 up to $50, when a life goes. $0503 = 2 means he fell into a hole or the water: the count starts at $0F there (A as the sound call leaves it, $3C1A), so he shows sprite $CB for four frames, then $CC, 65 frames in all. Otherwise he was hit: the count starts at 1, so he shows $DD until it reaches $14, then $B8, 79 frames in all."
   },
   {
    "address": 2454,
@@ -8978,7 +8978,7 @@
   {
    "address": 7051,
    "type": "line",
-   "text": "The spawner, run every frame. When the next entry of the area's spawn list ($04E8) has a trigger row equal to the map row now at the top of the screen ($0403), it steps past the entry and looks for one of the eleven enemy slots: a free one (the search runs twice, the second pass identical to the first), else one holding an enemy bullet or its spark, a score sprite, an explosion, a dying soldier, an enemy grenade or a rifle soldier (behaviours 8, 9, $13, $0C, 6, $0B or 5), which is overwritten. With none the entry is lost; with one it jumps to the entry's handler from $1BE8 with X = the slot and $FD = the entry's index. The lists run from the bottom of the map up, and entries sharing a row come due on successive frames."
+   "text": "The spawner, run on every pass of the game logic ($08F7). When the next entry of the area's spawn list ($04E8) has a trigger row equal to the map row now at the top of the screen ($0403), it steps past the entry and looks for one of the eleven enemy slots: a free one (the search runs twice, the second pass identical to the first), else one holding an enemy bullet or its spark, a score sprite, an explosion, a dying soldier, an enemy grenade or a rifle soldier (behaviours 8, 9, $13, $0C, 6, $0B or 5), which is overwritten. With none the entry is lost; with one it jumps to the entry's handler from $1BE8 with X = the slot and $FD = the entry's index. The lists run from the bottom of the map up, and entries sharing a row come due on successive frames."
   },
   {
    "address": 7075,
@@ -9293,7 +9293,7 @@
   {
    "address": 9365,
    "type": "line",
-   "text": "Runs the eleven enemy slots (5-15, X = 0-10 here, so the fields read $0412, $0422, $0432 ... for slot X + 5) every frame. First zeroes the count of gate soldiers alive ($04F4), which their behaviour counts up again. A slot whose sprite has left the play area (y above $1E or from $C2 down, or x from $15B on) is freed first ($3570). Then each slot's behaviour number ($0492) picks its routine from $24D4, called through $24D1; a free slot has behaviour 0, which may start an ambient soldier in it. Two routines return with X changed and the walk goes on from there: a trench soldier's lob ($2C64, X = $FF from $3537) sends it back to enemy 0, and a box picked up ($2AA6, X = 0 from the effect request) back to enemy 1, so the slots from there up to theirs run twice that frame."
+   "text": "Runs the eleven enemy slots (5-15, X = 0-10 here, so the fields read $0412, $0422, $0432 ... for slot X + 5) on every pass of the game logic ($08F7), which misses the frame on which the map moves a whole row. First zeroes the count of gate soldiers alive ($04F4), which their behaviour counts up again. A slot whose sprite has left the play area (y above $1E or from $C2 down, or x from $15B on) is freed first ($3570). Then each slot's behaviour number ($0492) picks its routine from $24D4, called through $24D1; a free slot has behaviour 0, which may start an ambient soldier in it. Two routines return with X changed and the walk goes on from there: a trench soldier's lob ($2C64, X = $FF from $3537) sends it back to enemy 0, and a box picked up ($2AA6, X = 0 from the effect request) back to enemy 1, so the slots from there up to theirs run twice in that pass."
   },
   {
    "address": 9413,
@@ -9343,7 +9343,7 @@
   {
    "address": 9682,
    "type": "line",
-   "text": "Behaviour 39, the sniper: a soldier lying in wait who never gets up. Turns to face the player ($2FEE) and fires ($33B2) every frame he is allowed to."
+   "text": "Behaviour 39, the sniper: a soldier lying in wait who never gets up. Turns to face the player ($2FEE) and fires ($33B2) on every pass he is allowed to."
   },
   {
    "address": 9691,
@@ -9628,7 +9628,7 @@
   {
    "address": 11451,
    "type": "line",
-   "text": "Behaviour 0, a free slot, which may start a soldier of its own. At the top of the map ($0403 = 0), while gate soldiers remain ($04EF, 20 a life), one chance in 128 for each free slot each frame sends one out: it sets the enemies' fire mask to the slowest ($0504 = $3F), counts the soldier off and makes a gate soldier (behaviour 27) by area: at x $8C-$CB, from y $64 in area 3 and y $3C in the others, except that in area 1 half of them enter from a side ($2CA3). Lower down the map it goes on to $2D63."
+   "text": "Behaviour 0, a free slot, which may start a soldier of its own. At the top of the map ($0403 = 0), while gate soldiers remain ($04EF, 20 a life), one chance in 128 for each free slot on each pass of the game logic sends one out: it sets the enemies' fire mask to the slowest ($0504 = $3F), counts the soldier off and makes a gate soldier (behaviour 27) by area: at x $8C-$CB, from y $64 in area 3 and y $3C in the others, except that in area 1 half of them enter from a side ($2CA3). Lower down the map it goes on to $2D63."
   },
   {
    "address": 11479,
@@ -9648,7 +9648,7 @@
   {
    "address": 11619,
    "type": "line",
-   "text": "Lower down the map, run for each free enemy slot each frame. One time in four at random (a random number's low two bits, $3FE8) it tries: one chance in 256 sends a rifle soldier down from the top of the screen (y $28) at a random x where the map is clear (terrain 0); otherwise one chance in 256 sends a grenade thrower (behaviour 24) in from a side at a random height from $3C: from the left edge (block $D9, heading right of 2-5) where the map is clear, or from the right edge (heading 11-14) where the cell is character $30."
+   "text": "Lower down the map, run for each free enemy slot on each pass of the game logic. One time in four at random (a random number's low two bits, $3FE8) it tries: one chance in 256 sends a rifle soldier down from the top of the screen (y $28) at a random x where the map is clear (terrain 0); otherwise one chance in 256 sends a grenade thrower (behaviour 24) in from a side at a random height from $3C: from the left edge (block $D9, heading right of 2-5) where the map is clear, or from the right edge (heading 11-14) where the cell is character $30."
   },
   {
    "address": 11678,
@@ -9738,7 +9738,7 @@
   {
    "address": 12260,
    "type": "line",
-   "text": "Once the scroll has carried this soldier down to y $50 or lower he turns to face the player ($2FEE); every frame he may fire ($33B2)."
+   "text": "Once the scroll has carried this soldier down to y $50 or lower he turns to face the player ($2FEE); on every pass he may fire ($33B2)."
   },
   {
    "address": 12270,
@@ -9763,7 +9763,7 @@
   {
    "address": 12479,
    "type": "line",
-   "text": "Behaviour 21, a soldier risen from cover: walks with the shared walk frames, turning from walls and behind scenery from frame 15. With one chance in eight each frame he turns to face the player's direction ($310A); otherwise every 32 frames he changes his walking heading ($3237). He never fires."
+   "text": "Behaviour 21, a soldier risen from cover: walks with the shared walk frames, turning from walls and behind scenery from frame 15. With one chance in eight on each pass he turns to face the player's direction ($310A); otherwise every 32 frames he changes his walking heading ($3237). He never fires."
   },
   {
    "address": 12554,
@@ -9798,7 +9798,7 @@
   {
    "address": 12754,
    "type": "line",
-   "text": "Behaviour 27, a soldier from the gate: counts himself alive for this frame ($04F4), and with one chance in 64 each frame stops and tries to throw a grenade ($32CF). Either way he then runs as a rifle soldier ($31E7)."
+   "text": "Behaviour 27, a soldier from the gate: counts himself alive for this pass ($04F4), and with one chance in 64 on each pass stops and tries to throw a grenade ($32CF). Either way he then runs as a rifle soldier ($31E7)."
   },
   {
    "address": 12775,
@@ -10003,7 +10003,7 @@
   {
    "address": 13859,
    "type": "line",
-   "text": "Runs the player's shot slots 1-4 (X = 0-3) once a frame: frees one that has left the play area (y above $1E or from $DC down, or x from $15B on), then calls its routine from $3619 by type ($048E). An empty slot may fire, so slot 4, kept for the grenade, can carry a bullet too."
+   "text": "Runs the player's shot slots 1-4 (X = 0-3) on every pass of the game logic ($08F7): frees one that has left the play area (y above $1E or from $DC down, or x from $15B on), then calls its routine from $3619 by type ($048E). An empty slot may fire, so slot 4, kept for the grenade, can carry a bullet too."
   },
   {
    "address": 13913,
@@ -10123,7 +10123,7 @@
   {
    "address": 14787,
    "type": "line",
-   "text": "Shot type 0, an empty slot, which fires a bullet when fire is held. Not while dying or once the area is won. $04DF counts up once for each empty slot each frame from $FF, set when fire is released: the first count makes 0, so a press fires at once; the next bullet comes when it reaches 8, two frames later with all four shot slots empty, three with three, longer with fewer, and then it stops there until fire is let go. So each press gives two bullets. The bullet (type 1, block $90, white) leaves from the muzzle offset for the player's facing ($35F9, $3609) at its speed ($35D9, $35E9)."
+   "text": "Shot type 0, an empty slot, which fires a bullet when fire is held. Not while dying or once the area is won. $04DF counts up once for each empty slot on each pass of the game logic from $FF, set when fire is released: the first count makes 0, so a press fires at once; the next bullet comes when it reaches 8, two frames later with all four shot slots empty, three with three, longer with fewer, and then it stops there until fire is let go. So each press gives two bullets. The bullet (type 1, block $90, white) leaves from the muzzle offset for the player's facing ($35F9, $3609) at its speed ($35D9, $35E9)."
   },
   {
    "address": 14887,
@@ -10143,7 +10143,7 @@
   {
    "address": 14907,
    "type": "line",
-   "text": "The walk out through the gate, run every frame in place of the joystick: two pixels a frame left or right until x is $AF, the gate's middle, then up a pixel a frame. At y $5A it sets $04F5, which nothing reads; the main loop ends the area itself at that y ($091C)."
+   "text": "The walk out through the gate, run on every pass of the game logic in place of the joystick: two pixels a frame left or right until x is $AF, the gate's middle, then up a pixel a frame. At y $5A it sets $04F5, which nothing reads; the main loop ends the area itself at that y ($091C)."
   },
   {
    "address": 14939,
@@ -10158,7 +10158,7 @@
   {
    "address": 14988,
    "type": "line",
-   "text": "The player, once a frame while he is not dying. Starts the walk out when the area is won. Otherwise the joystick sets his speeds and the direction he walks ($04E0): up a pixel a frame while he is at y $A4 or lower on the screen, and above that, up scrolls the map instead ($0404 = $FF); at the top of the map ($0403 = 0) nothing scrolls and he walks up while he is at y $6E or lower; down to y $C1; left and right two pixels a frame between x $17 and $141 (his x is always odd). Walking, he takes the shared walk frames ($3CA2) for the joystick's direction, a frame every four. His facing turns towards it ($35B0). Then the map ahead of him, four pixels across or three up or down, is checked ($3BB1)."
+   "text": "The player, on every pass of the game logic ($08F7) while he is not dying. Starts the walk out when the area is won. Otherwise the joystick sets his speeds and the direction he walks ($04E0): up a pixel a frame while he is at y $A4 or lower on the screen, and above that, up scrolls the map instead ($0404 = $FF); at the top of the map ($0403 = 0) nothing scrolls and he walks up while he is at y $6E or lower; down to y $C1; left and right two pixels a frame between x $17 and $141 (his x is always odd). Walking, he takes the shared walk frames ($3CA2) for the joystick's direction, a frame every four. His facing turns towards it ($35B0). Then the map ahead of him, four pixels across or three up or down, is checked ($3BB1)."
   },
   {
    "address": 15036,

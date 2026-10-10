@@ -36,7 +36,12 @@ The first sample of the comments (seed 20261010, 70 drawn) found 12 wrong,
 17 %. The errors were the usual kind: a caller list missing members, a
 condition stated one-sided, a register value given as one nibble, a count
 off by one. Four fresh agents then audited every comment in four disjoint
-ranges, and changed 137 of 897. Their notes stay in `work/reports/`.
+ranges, and changed 137 of 897. Their notes stay in `work/reports/`. A
+second sample by another fresh checker (seed 20261011) found 1 of 70
+wrong: the enemy loop described as running every frame, the same slip
+the first sample caught in the frame counter. A search for the phrase
+found fifteen more routines called from the logic pass with the same
+claim, and all sixteen were corrected.
 
 Live tests overturned three claims that read well. The attract mode was
 written up as eight views; stopping at each view's set-up showed seven,
