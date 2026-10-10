@@ -15,15 +15,19 @@
   "credits": [
     {
       "by": "Chris Butler",
-      "role": "Developer"
+      "role": "programming (C64-Wiki, GameBase64)"
     },
     {
       "by": "Rory Green",
-      "role": "Developer"
+      "role": "graphics (GameBase64)"
     },
     {
       "by": "Chris Harvey",
-      "role": "Developer"
+      "role": "graphics (GameBase64)"
+    },
+    {
+      "by": "Rob Hubbard",
+      "role": "music (C64-Wiki, GameBase64)"
     }
   ],
   "tools": {
@@ -45,76 +49,116 @@
     "charset": "$C000"
   },
   "coverage": {
-    "exclude": [],
+    "exclude": [
+      [
+        "$0513",
+        "$07FF",
+        "the rest of REMEMBER's screen at $0400 (its menu and the instructions viewer, $4763, $476F), spaces at the hand-over; the game's variables end at $0512 and no game code reads or writes past them"
+      ],
+      [
+        "$D040",
+        "$D07F",
+        "sprite block $41, the name entry's gunsight: blank as loaded, written by $0A57 from $0A7F"
+      ],
+      [
+        "$FFC0",
+        "$FFFF",
+        "sprite block $FF, the blank block: $3E93 zeroes it before anything is shown, over a near copy of block $AC"
+      ],
+      [
+        "$E000",
+        "$E3FF",
+        "the game's screen and sprite pointers, rewritten whole before play ($3F75, $4081); at the hand-over it still holds a copy of REMEMBER's last two menu lines ($7F60-$7FAF) at $E118-$E167"
+      ]
+    ],
     "extra": [
       [
+        "$6000",
+        "$7F5F",
+        "area 0's map, 200 rows of 40 characters, and the zeros after it"
+      ],
+      [
+        "$8000",
+        "$9FFF",
+        "area 1's map and the zeros after it"
+      ],
+      [
+        "$A000",
+        "$BFFF",
+        "area 3's map and the zeros after it"
+      ],
+      [
         "$C000",
-        "$C7FF",
-        "battlefield charset: first and second 128-glyph bitmap banks"
+        "$CFFF",
+        "the character sets of areas 0 and 1"
       ],
       [
-        "$D000",
-        "$D3FF",
-        "HUD charset: glyphs 0\u2013127 in RAM beneath VIC-II I/O"
-      ],
-      [
-        "$D400",
-        "$D7FF",
-        "HUD charset: glyphs 128\u2013255 in RAM beneath SID/CIA I/O"
-      ],
-      [
-        "$4469",
-        "$4478",
-        "Sprite-bit masks: eight one-hot masks and their eight complements used for X-MSB and priority assembly"
-      ],
-      [
-        "$5591",
-        "$55F8",
-        "Thirteen eight-byte SID instrument parameter records; pulse width, control, ADSR and modulation fields are selected by the channel updater"
-      ],
-      [
-        "$55F9",
-        "$56F8",
-        "Sixteen sixteen-byte SID sound-effect presets; $5531 selects a record using the low nibble of $5527"
-      ],
-      [
-        "$56FF",
-        "$5710",
-        "Three six-byte voice-stream pointer descriptors: three low bytes followed by three high bytes, copied by $5F0C"
-      ],
-      [
-        "$5711",
-        "$573D",
-        "Low bytes for 45 sequence-data pointers, indexed by the sequence-command parser at $50AA"
-      ],
-      [
-        "$573E",
-        "$576A",
-        "High bytes paired by index with the low-byte sequence-pointer table at $5711"
-      ],
-      [
-        "$141C",
-        "$145B",
-        "64-byte initialization source read by $3575 and copied into the per-slot field at $0432,X; the field meaning is not yet identified"
-      ],
-      [
-        "$5428",
-        "$54E7",
-        "Ninety-six little-endian SID note periods, indexed by note number in the music and effect routines"
+        "$E400",
+        "$FFBF",
+        "sprite blocks $90-$FE"
       ]
     ],
     "include": [
       [
         "$D000",
-        "$D7FF",
-        "RAM under I/O used as VIC character data"
+        "$D03F",
+        "the text character set's first glyphs, in the RAM under the I/O area"
+      ],
+      [
+        "$D080",
+        "$DFFF",
+        "the rest of the text character set and area 3's, in the RAM under the I/O area"
       ]
     ]
   },
-  "io": [],
-  "regions": [],
+  "io": [
+    [
+      "$0A65",
+      "$0A6F",
+      "ram",
+      "CHAREN cleared from $0A63 to $0A74: the gunsight's stores reach the RAM under the I/O area"
+    ]
+  ],
+  "regions": [
+    [
+      "$5000",
+      "$5F0B",
+      "sound",
+      "Rob Hubbard's music driver, its tables, tracks and patterns"
+    ],
+    [
+      "$6000",
+      "$7F5F",
+      "levels",
+      "area 0's map"
+    ],
+    [
+      "$8000",
+      "$BFFF",
+      "levels",
+      "the maps of areas 1 and 3"
+    ],
+    [
+      "$C000",
+      "$DFFF",
+      "graphics",
+      "four character sets"
+    ],
+    [
+      "$E400",
+      "$FFBF",
+      "graphics",
+      "sprite blocks $90-$FE"
+    ]
+  ],
   "links": {
-    "wiki": "https://www.c64-wiki.com/wiki/Commando",
-    "manual": "https://www.lemon64.com/doc/commando/148"
+    "wiki": {
+      "title": "Commando – C64-Wiki",
+      "url": "https://www.c64-wiki.com/wiki/Commando"
+    },
+    "manual": {
+      "title": "Commando / Space Invasion",
+      "url": "https://www.worldofspectrum.org/pub/sinclair/games-info/c/Commando_English.pdf"
+    }
   }
 }
